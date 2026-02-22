@@ -5,6 +5,7 @@ import { faInstagram, faTwitter, faFacebookF } from '@fortawesome/free-brands-sv
 
 export default function StorefrontLayout() {
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden font-display min-h-screen flex flex-col">
@@ -47,11 +48,50 @@ export default function StorefrontLayout() {
             </div>
           </nav>
           {/* Mobile Menu Button */}
-          <button className="md:hidden text-white hover:text-primary">
-            <span className="material-symbols-outlined">menu</span>
-          </button>
+          <div className="flex items-center gap-4 md:hidden">
+            <button 
+              onClick={() => setIsCartOpen(true)}
+              className="text-white hover:text-primary transition-colors relative"
+            >
+              <span className="material-symbols-outlined text-[20px]">shopping_bag</span>
+              <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+              </span>
+            </button>
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="text-white hover:text-primary"
+            >
+              <span className="material-symbols-outlined">menu</span>
+            </button>
+          </div>
         </div>
       </header>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-[60] flex justify-end md:hidden" role="dialog" aria-modal="true">
+          <div className="fixed inset-0 bg-brand-navy/60 backdrop-blur-sm transition-opacity opacity-100" onClick={() => setIsMobileMenuOpen(false)}></div>
+          <div className="relative w-full max-w-xs bg-brand-navy text-white shadow-2xl h-full flex flex-col transform transition-transform translate-x-0 border-l border-white/10">
+            <div className="flex items-center justify-between p-6 border-b border-white/10">
+              <h2 className="font-serif text-xl font-bold uppercase tracking-widest text-white">Menu</h2>
+              <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-white/60 hover:text-white transition-colors">
+                <span className="material-symbols-outlined text-2xl">close</span>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              <nav className="flex flex-col gap-6">
+                <Link to="/shop/new-arrivals" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-white/80 hover:text-primary transition-colors">Shop</Link>
+                <Link to="/collections" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-white/80 hover:text-primary transition-colors">Collections</Link>
+                <Link to="/our-story" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-white/80 hover:text-primary transition-colors">Our Story</Link>
+                <Link to="/contact" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-white/80 hover:text-primary transition-colors">Contact</Link>
+                <Link to="/account" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-white/80 hover:text-primary transition-colors">Account</Link>
+              </nav>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cart Drawer */}
       {isCartOpen && (
