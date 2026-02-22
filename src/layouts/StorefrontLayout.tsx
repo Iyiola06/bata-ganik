@@ -14,6 +14,7 @@ export default function StorefrontLayout() {
         <div className="max-w-[1440px] mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
           {/* Left Nav */}
           <nav className="hidden md:flex items-center gap-8">
+            <Link to="/" className="text-white/80 hover:text-primary text-sm font-medium tracking-wide uppercase transition-colors">Home</Link>
             <Link to="/shop/new-arrivals" className="text-white/80 hover:text-primary text-sm font-medium tracking-wide uppercase transition-colors">Shop</Link>
             <Link to="/collections" className="text-white/80 hover:text-primary text-sm font-medium tracking-wide uppercase transition-colors">Collections</Link>
           </nav>

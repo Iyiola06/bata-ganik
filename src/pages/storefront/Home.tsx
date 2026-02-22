@@ -1,7 +1,30 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'motion/react';
 
 export default function Home() {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const { current } = scrollRef;
+      const scrollAmount = 300;
+      if (direction === 'left') {
+        current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+      } else {
+        current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      }
+    }
+  };
+
+  const featuredProducts = [
+    { id: 1, name: 'The Danfo Oxford', price: '₦ 245,000', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBbI0GADz62_Ubwvh23hXTsDhQPNVQvxBVfabR0enD1I_rhe0W29LgpRXdUIleBjSGLAKK9Vdm_xEZbt26zTXy_cphehzKcYSwIRrl4QDNXXAPArtMN5_z1EsiitehCrD58PBbecglGQw4ZVP-SLcjw6H5kBiPypu4SEJ-uzS1AhkmZSTS1haSsc6jMRb5KbvmxAcmRCzclKFR3eTPEP4sttrN-i4hNGBAgirFt1xzsWgfxzJ8FtYhIfZKC-NtoX7dZRIh3wWco_YZw', color: 'Cognac Leather' },
+    { id: 2, name: 'The Eyo Derby', price: '₦ 280,000', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC6laHQk2sp0cC3fJVrbJPbjSU0GxypHmst-3VGLpLlLVbXnDILWxOuJcp_k1gyFN8Wddlxg1lJ48xVFwhToZKbzp5b-E3hcxCx5eBHJzTYagCqxVVuqKt-AHS7NqImu02lWMFUyn4snLoPsTz1cbip6tjSejVupxrvjAgKledejifK2JvvV2lDnEpKwTCsWQF0-9-K2lewRwmtufwGWNtCvPzdGLUB7ZDWLcFts57wz99PQ7X5glP2wIfPqsqQc9OVkBV09U65FU-e', color: 'Midnight Black' },
+    { id: 3, name: 'The Lekki Loafer', price: '₦ 210,000', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDEIMuP1P06qsNfV0aoHOfgyU-VjzKIXVSSFEfWnwyGmgwgQi99GyQLP7zfo2I2TOHY8DNI2qwzMhxWnyThFiX2_pifkvo40utu5PrRzWq3AFeu2mnlUIP-JOx46aGAqL9ukubQZBDtsgw10mCCmzeak_REhCiqhQ6lAFcLc6k_epxYB0q-mGo7L5IGIvlSuFuKqAxbOaQ5PGhmPQyEBwTT5T2WumBrOq8_vXddbgOqeXOFrGL5f2rvmcF0VoLuUkvJrBSsnqzR7doL', color: 'Royal Blue Suede' },
+    { id: 4, name: 'The Zaria Boot', price: '₦ 315,000', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuArfYU1GgdDyPuvM1vwBQ73lXf7KvuxA-a9RVqme8UGYPHMNusQA45030xEWz04zizYh7NwbtgNUv0JuZKtKRDiY2T-MikLI1TjJiI7396FxHly144w9ipa6rNBd2MQVzRgf22Wf8qFMHH_9AZMifYQLLsWAQeLlzCiQz8UaVTZKOvQKzxCuk7bi6PY_PuRKe4ipl8OQLkCjvqhrh_ZGXQwUqL3BuBas9QnTOKr_lPV6aoAHJFbxr0bjofjjT0Jw1WbedhTDHB0nubI', color: 'Chocolate Brown' },
+    { id: 5, name: 'The Oba Oxford', price: '₦ 120,000', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDm67IA7RXIA_V5-P7yQtms_Ujf1RHkfqLCnJPbDpssajbPh1Nz_CgkDOo2uSoTORdHg89ewHnUnzciVxRv18fiiXclQVM9f8aZysQh9C-BBXELW8j-Kx9OEfHMvc2K423RG9L7xKtWXM98lG3uosVEM-Qy2BNz84uU-bhSBk6xVNIwFP2m2n46SP_at-b1PBkRZPjU5l8yvg8Ogd6FIfUPhXzNvQiTAR4H-eTn1cCXwHNVh9Jfg1GaPBxB7D-fGh50EV_5SiXOO5HH', color: 'Savannah Brown' },
+  ];
+
   return (
     <>
       {/* Hero Section */}
@@ -26,6 +49,58 @@ export default function Home() {
           
           <div className="animate-bounce">
             <span className="material-symbols-outlined text-stone-900 text-3xl">keyboard_arrow_down</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Products Slider */}
+      <section className="py-24 px-6 md:px-12 lg:px-24 bg-white dark:bg-stone-950">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-between items-end mb-12">
+            <div>
+              <h2 className="font-serif text-4xl md:text-5xl text-stone-900 dark:text-white mb-4">Featured Collection</h2>
+              <p className="text-stone-600 dark:text-stone-400 max-w-md">
+                Handpicked favorites that define the Bata Ganik aesthetic.
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <button 
+                onClick={() => scroll('left')}
+                className="p-3 rounded-full border border-stone-200 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+              >
+                <span className="material-symbols-outlined">arrow_back</span>
+              </button>
+              <button 
+                onClick={() => scroll('right')}
+                className="p-3 rounded-full border border-stone-200 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+              >
+                <span className="material-symbols-outlined">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+
+          <div 
+            ref={scrollRef}
+            className="flex overflow-x-auto gap-8 pb-8 snap-x hide-scroll scroll-smooth"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {featuredProducts.map((product) => (
+              <motion.div 
+                key={product.id}
+                className="min-w-[300px] md:min-w-[350px] snap-start group"
+                whileHover={{ y: -10 }}
+              >
+                <Link to={`/products/${product.id}`}>
+                  <div className="aspect-[3/4] bg-stone-100 dark:bg-stone-800 rounded-lg overflow-hidden mb-6 relative">
+                    <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"></div>
+                  </div>
+                  <h3 className="font-serif text-xl text-stone-900 dark:text-white mb-2 group-hover:text-primary transition-colors">{product.name}</h3>
+                  <p className="text-stone-500 dark:text-stone-400 text-sm mb-2">{product.color}</p>
+                  <span className="text-primary font-bold">{product.price}</span>
+                </Link>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
