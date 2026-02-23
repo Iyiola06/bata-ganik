@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { createHmac } from 'crypto'
 import { sendOrderConfirmationEmail } from '@/lib/email'
 
+export const maxDuration = 30
+
 // POST /api/payments/paystack/webhook
 // Receives and verifies Paystack webhook events
 export async function POST(request: NextRequest) {

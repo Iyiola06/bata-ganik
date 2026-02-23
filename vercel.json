@@ -1,12 +1,4 @@
 {
-    "functions": {
-        "app/api/payments/paystack/webhook/route.ts": {
-            "maxDuration": 30
-        },
-        "app/api/payments/stripe/webhook/route.ts": {
-            "maxDuration": 30
-        }
-    },
     "headers": [
         {
             "source": "/api/payments/:gateway*/webhook",

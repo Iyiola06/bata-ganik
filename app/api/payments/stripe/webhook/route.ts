@@ -3,6 +3,8 @@ import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { sendOrderConfirmationEmail } from '@/lib/email'
 
+export const maxDuration = 30
+
 // POST /api/payments/stripe/webhook
 // Verifies and handles Stripe webhook events
 export async function POST(request: NextRequest) {
