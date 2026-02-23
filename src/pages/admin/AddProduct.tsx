@@ -1,7 +1,137 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { api, type Collection } from '../../lib/api';
+
+interface VariantRow {
+  key: string;
+  sizeEU: string;
+  color: string;
+  colorHex: string;
+  priceModifier: number;
+  stockQty: number;
+}
+
+function uid() {
+  return Math.random().toString(36).slice(2);
+}
+
+const DEFAULT_SIZES = ['39', '40', '41', '42', '43', '44', '45'];
 
 export default function AddProduct() {
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Collections
+  const [collections, setCollections] = useState<Collection[]>([]);
+  useEffect(() => {
+    api.get<{ collections: Collection[] }>('/collections').then((res) => setCollections(res.collections));
+  }, []);
+
+  // Form fields
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [heritageStory, setHeritageStory] = useState('');
+  const [sku, setSku] = useState('');
+  const [price, setPrice] = useState('');
+  const [compareAtPrice, setCompareAtPrice] = useState('');
+  const [collectionId, setCollectionId] = useState('');
+  const [tags, setTags] = useState('');
+  const [isFeatured, setIsFeatured] = useState(false);
+
+  // Variants
+  const [variants, setVariants] = useState<VariantRow[]>([
+    { key: uid(), sizeEU: '40', color: '', colorHex: '', priceModifier: 0, stockQty: 0 },
+    { key: uid(), sizeEU: '41', color: '', colorHex: '', priceModifier: 0, stockQty: 0 },
+    { key: uid(), sizeEU: '42', color: '', colorHex: '', priceModifier: 0, stockQty: 0 },
+    { key: uid(), sizeEU: '43', color: '', colorHex: '', priceModifier: 0, stockQty: 0 },
+  ]);
+
+  const addVariant = () =>
+    setVariants((prev) => [...prev, { key: uid(), sizeEU: '', color: '', colorHex: '', priceModifier: 0, stockQty: 0 }]);
+  const removeVariant = (key: string) => setVariants((prev) => prev.filter((v) => v.key !== key));
+  const updateVariant = (key: string, field: keyof VariantRow, value: string | number) =>
+    setVariants((prev) => prev.map((v) => (v.key === key ? { ...v, [field]: value } : v)));
+
+  // Images
+  const [images, setImages] = useState<Array<{ url: string; altText: string; isMain: boolean; uploading?: boolean }>>([]);
+  const [uploadError, setUploadError] = useState('');
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    setUploadError('');
+    for (const file of files) {
+      const placeholderKey = uid();
+      setImages((prev) => [...prev, { url: '', altText: file.name, isMain: prev.length === 0, uploading: true }]);
+      try {
+        const form = new FormData();
+        form.append('file', file);
+        form.append('bucket', 'product-images');
+        const res = await fetch('/api/upload', { method: 'POST', body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error ?? 'Upload failed');
+        setImages((prev) => {
+          const idx = prev.findIndex((img) => img.uploading && img.altText === file.name);
+          if (idx === -1) return prev;
+          const next = [...prev];
+          next[idx] = { url: data.url, altText: file.name, isMain: idx === 0, uploading: false };
+          return next;
+        });
+      } catch (err: any) {
+        setUploadError(err?.message ?? 'Upload failed');
+        setImages((prev) => prev.filter((img) => !(img.uploading && img.altText === file.name)));
+      }
+    }
+    // reset input
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeImage = (idx: number) => setImages((prev) => prev.filter((_, i) => i !== idx));
+  const setMainImage = (idx: number) =>
+    setImages((prev) => prev.map((img, i) => ({ ...img, isMain: i === idx })));
+
+  // Submit
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent, publish: boolean) => {
+    e.preventDefault();
+    if (!name.trim()) { setFormError('Product name is required.'); return; }
+    if (!price || Number(price) <= 0) { setFormError('Base price must be greater than 0.'); return; }
+    if (variants.length === 0) { setFormError('Add at least one size variant.'); return; }
+    if (images.length === 0) { setFormError('Upload at least one product image.'); return; }
+    setFormError('');
+    setSubmitting(true);
+    try {
+      const payload = {
+        name: name.trim(),
+        description: description.trim() || null,
+        heritageStory: heritageStory.trim() || null,
+        sku: sku.trim() || `BG-${Date.now()}`,
+        price: Math.round(Number(price) * 100) / 100,
+        compareAtPrice: compareAtPrice ? Math.round(Number(compareAtPrice) * 100) / 100 : null,
+        collectionId: collectionId || null,
+        tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
+        isFeatured,
+        isPublished: publish,
+        variants: variants.map(({ sizeEU, color, colorHex, priceModifier, stockQty }) => ({
+          sizeEU,
+          color: color || null,
+          colorHex: colorHex || null,
+          priceModifier: Number(priceModifier),
+          stockQty: Number(stockQty),
+        })),
+        images: images.map(({ url, altText, isMain }, order) => ({ url, altText, isMain, order })),
+      };
+      const res = await api.post<{ product: { id: string } }>('/admin/products', payload);
+      navigate('/admin/products');
+    } catch (err: any) {
+      setFormError(err?.message ?? 'Failed to create product. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-6 lg:p-10 pb-20">
       <div className="max-w-6xl mx-auto flex flex-col gap-8">
@@ -19,153 +149,219 @@ export default function AddProduct() {
             <p className="text-slate-500 dark:text-slate-400">Create a new luxury footwear listing for the Bata Ganik collection.</p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-4 h-10 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-              Save Draft
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={(e) => handleSubmit(e, false)}
+              className="px-4 h-10 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+            >
+              {submitting ? '...' : 'Save Draft'}
             </button>
-            <button className="px-5 h-10 rounded-lg text-sm font-bold text-white bg-primary hover:bg-[#b09055] transition-colors shadow-sm shadow-primary/30 flex items-center gap-2">
-              <span className="material-symbols-outlined text-lg">publish</span>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={(e) => handleSubmit(e, true)}
+              className="px-5 h-10 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary/90 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
+            >
+              {submitting ? (
+                <span className="animate-spin material-symbols-outlined text-sm">progress_activity</span>
+              ) : (
+                <span className="material-symbols-outlined text-lg">publish</span>
+              )}
               Publish Product
             </button>
           </div>
         </div>
 
-        <form className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column: Visuals & Story (5 Columns) */}
+        {formError && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-sm text-red-700 dark:text-red-400">
+            {formError}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column */}
           <div className="lg:col-span-5 flex flex-col gap-6">
             {/* Media Uploader */}
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-slate-900 dark:text-white text-lg">Product Media</h3>
-                <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded">Cover Image</span>
+                <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded">
+                  {images.length} / 8 images
+                </span>
               </div>
               {/* Dropzone */}
-              <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-primary/50 hover:bg-primary/5 rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer group mb-6">
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-primary/50 hover:bg-primary/5 rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer group mb-4"
+              >
                 <div className="size-12 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                   <span className="material-symbols-outlined text-slate-400 group-hover:text-primary text-2xl">add_photo_alternate</span>
                 </div>
-                <p className="text-sm font-medium text-slate-900 dark:text-white">Click to upload or drag and drop</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">SVG, PNG, JPG or GIF (max. 800x400px)</p>
+                <p className="text-sm font-medium text-slate-900 dark:text-white">Click to upload</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">PNG, JPG, WebP (max 8 images)</p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
               </div>
-              {/* Grid Preview */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="relative aspect-square rounded-lg overflow-hidden border border-primary ring-2 ring-primary ring-offset-2 dark:ring-offset-slate-900 cursor-grab active:cursor-grabbing group">
-                  <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMsue-jm9rOgtNW040FtgnmikpnpAyGuEObCVHHtVVEa1is4SXpOxbUtB8jAppvq_sn4mbd89FBmt-Rw8Z84Db9dWfMVl5q-hRdsJoOToBOsx4lzEwX9lU4hBJ4LN3sSSHQvvMok8LyGTQgFi14qRQDf1gVEwCe25d9Z0WSM_DXoH0TmG8UpOgmM3DbVph2h6Y5_6AdxT24GYNYy6Mb4G65bukFCMcbghTirW1fRLFL0NG1bpJRNV4cIFAirjbf8QozXKHswMw13HZ" alt="Blue leather shoe detail" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
-                  <div className="absolute top-1 right-1 bg-white rounded-full p-0.5 shadow-sm cursor-pointer hover:bg-red-50 hover:text-red-500 text-slate-400">
-                    <span className="material-symbols-outlined text-sm block">close</span>
-                  </div>
-                  <div className="absolute bottom-1 left-1 bg-primary/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">Main</div>
+              {uploadError && <p className="text-red-500 text-xs mb-3">{uploadError}</p>}
+              {/* Image Grid */}
+              {images.length > 0 && (
+                <div className="grid grid-cols-3 gap-3">
+                  {images.map((img, idx) => (
+                    <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 group">
+                      {img.uploading ? (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                          <span className="animate-spin material-symbols-outlined text-primary">progress_activity</span>
+                        </div>
+                      ) : (
+                        <img src={img.url} alt={img.altText} className="w-full h-full object-cover" />
+                      )}
+                      {!img.uploading && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => removeImage(idx)}
+                            className="absolute top-1 right-1 bg-white dark:bg-slate-800 rounded-full p-0.5 shadow-sm hover:bg-red-50 hover:text-red-500 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <span className="material-symbols-outlined text-sm block">close</span>
+                          </button>
+                          {img.isMain ? (
+                            <div className="absolute bottom-1 left-1 bg-primary/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">Main</div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setMainImage(idx)}
+                              className="absolute bottom-1 left-1 bg-white/80 text-[10px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary hover:text-white"
+                            >
+                              Set main
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ))}
                 </div>
-                <div className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 cursor-grab active:cursor-grabbing group">
-                  <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnD0Uv7djQbxEmSYYzaBOKcwG4XFCLEcOxr5mGaRBBQ_bKg3F-d0FcWGXIcyPrG4GNfh6ziCVLzoadkBYEF5qGhncNbxIN3CF79E6suiQFaSZSz4A01WVabC5BwLTBM1u6dt-_dHNwzBt1RVAOhD6aO5NozGno0zGjW-GGKbcpoA1jWTkhPiv64Rj4cOGredJnpUQjuKBDXO6jntZ2tDQE9H0B9TyDBqkAQ2WRfn19tVOoLwCY5WX44NFbdM1o5MFjxp3aHpYa6YBD" alt="Leather texture closeup" className="w-full h-full object-cover" />
-                  <div className="absolute top-1 right-1 bg-white rounded-full p-0.5 shadow-sm cursor-pointer hover:bg-red-50 hover:text-red-500 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="material-symbols-outlined text-sm block">close</span>
-                  </div>
-                </div>
-                <div className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 cursor-grab active:cursor-grabbing group">
-                  <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUWlJNuO2OMpkTm5StP10PecTvsHGK-oFbg_Ttlfgb2nrkAPodViLI5WWvk9MFQutVG_XpNPUBlvgnjlRd3MiQrdXIf2mOqSJ5iAktg0BC_chQqd2gZZ5iLk15Ct9MARDWEHpTZJIEyQixYUGcy4Yg5CkcukTX9OhLULFQ7GKKaxpEWYpg1H6qSWHQ4On7fOy6yvjNvMW5n2INtFWz6_e7vya0I57RnzBPdsr7mC0Zk-ENulSU1sV1B9CTOV5nFBPrOz9Eo0ad0SgX" alt="Shoe sole detail" className="w-full h-full object-cover" />
-                  <div className="absolute top-1 right-1 bg-white rounded-full p-0.5 shadow-sm cursor-pointer hover:bg-red-50 hover:text-red-500 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="material-symbols-outlined text-sm block">close</span>
-                  </div>
-                </div>
-                <div className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                  <span className="material-symbols-outlined text-slate-300 dark:text-slate-500">add</span>
-                </div>
-              </div>
+              )}
             </div>
 
-            {/* Cultural Story Section (Brand Heritage) */}
-            <div className="bg-[#faf9f6] dark:bg-[#1a1814] border border-[#e8e6e1] dark:border-[#333] rounded-xl p-6 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                <span className="material-symbols-outlined text-9xl text-primary">history_edu</span>
+            {/* Cultural Story */}
+            <div className="bg-[#faf9f6] dark:bg-[#1a1814] border border-[#e8e6e1] dark:border-[#333] rounded-xl p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="material-symbols-outlined text-primary">auto_awesome</span>
+                <h3 className="font-bold text-[#4a453e] dark:text-[#d4cfc5] text-lg">Cultural Story</h3>
               </div>
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="material-symbols-outlined text-primary">auto_awesome</span>
-                  <h3 className="font-bold text-[#4a453e] dark:text-[#d4cfc5] text-lg">Cultural Story</h3>
-                </div>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
-                  Every Bata Ganik piece tells a story. Describe the Nigerian heritage, craftsmanship, or inspiration behind this design. This will appear on the product page.
-                </p>
-                <label className="block">
-                  <span className="sr-only">Heritage Story</span>
-                  <textarea 
-                    className="w-full rounded-lg bg-white dark:bg-black border-transparent focus:border-primary focus:ring-0 shadow-sm placeholder:text-slate-400 text-slate-700 dark:text-slate-300 text-sm leading-relaxed p-4 resize-none" 
-                    placeholder="E.g., Inspired by the vibrant patterns of the Yoruba talking drum..." 
-                    rows={6}
-                  ></textarea>
-                </label>
-              </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
+                Describe the Nigerian heritage, craftsmanship, or inspiration behind this design. Appears on the product page.
+              </p>
+              <textarea
+                value={heritageStory}
+                onChange={(e) => setHeritageStory(e.target.value)}
+                className="w-full rounded-lg bg-white dark:bg-black border-slate-300 dark:border-slate-700 focus:border-primary focus:ring-0 shadow-sm placeholder:text-slate-400 text-slate-700 dark:text-slate-300 text-sm leading-relaxed p-4 resize-none"
+                placeholder="E.g., Inspired by the vibrant patterns of the Yoruba talking drum..."
+                rows={6}
+              />
             </div>
 
-            {/* Organization Card */}
+            {/* Organization */}
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
               <h3 className="font-bold text-slate-900 dark:text-white text-lg mb-4">Organization</h3>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Collection</label>
-                  <div className="relative">
-                    <select className="w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary">
-                      <option>Lagos Luxury</option>
-                      <option>Savannah Edit</option>
-                      <option>Royal Heritage</option>
-                      <option>Urban Nomad</option>
-                    </select>
-                  </div>
+                  <select
+                    value={collectionId}
+                    onChange={(e) => setCollectionId(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm p-2.5 focus:ring-primary focus:border-primary"
+                  >
+                    <option value="">— None —</option>
+                    {collections.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Vendor</label>
-                  <input type="text" value="Bata Ganik Atelier" readOnly className="w-full rounded-lg border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary" />
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Tags <span className="text-xs font-normal text-slate-400">(comma-separated)</span></label>
+                  <input
+                    type="text"
+                    value={tags}
+                    onChange={(e) => setTags(e.target.value)}
+                    placeholder="Leather, Handmade, Formal..."
+                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm p-2.5 focus:ring-primary focus:border-primary"
+                  />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Tags</label>
-                  <input type="text" placeholder="Leather, Handmade, Formal..." className="w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary" />
-                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isFeatured}
+                    onChange={(e) => setIsFeatured(e.target.checked)}
+                    className="rounded text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm text-slate-700 dark:text-slate-300">Feature on homepage</span>
+                </label>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Product Data (7 Columns) */}
+          {/* Right Column */}
           <div className="lg:col-span-7 flex flex-col gap-6">
             {/* General Info */}
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
-              <h3 className="font-bold text-slate-900 dark:text-white text-lg mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">General Information</h3>
+              <h3 className="font-bold text-slate-900 dark:text-white text-lg mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
+                General Information
+              </h3>
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-bold text-slate-900 dark:text-white mb-2">Product Name</label>
-                  <input type="text" placeholder="e.g. The Oba Loafer" className="w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-lg font-medium focus:ring-primary focus:border-primary placeholder:text-slate-300" />
+                  <label className="block text-sm font-bold text-slate-900 dark:text-white mb-2">Product Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. The Oba Loafer"
+                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-lg font-medium p-3 focus:ring-primary focus:border-primary placeholder:text-slate-300"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-900 dark:text-white mb-2">Description</label>
-                  <div className="border border-slate-300 dark:border-slate-700 rounded-lg overflow-hidden focus-within:ring-1 focus-within:ring-primary focus-within:border-primary bg-white dark:bg-slate-800">
-                    {/* Fake Rich Text Toolbar */}
-                    <div className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-3 py-2 flex items-center gap-1">
-                      <button type="button" className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400"><span className="material-symbols-outlined text-[18px]">format_bold</span></button>
-                      <button type="button" className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400"><span className="material-symbols-outlined text-[18px]">format_italic</span></button>
-                      <button type="button" className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400"><span className="material-symbols-outlined text-[18px]">format_underlined</span></button>
-                      <div className="w-px h-4 bg-slate-300 dark:bg-slate-600 mx-1"></div>
-                      <button type="button" className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400"><span className="material-symbols-outlined text-[18px]">format_list_bulleted</span></button>
-                      <button type="button" className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400"><span className="material-symbols-outlined text-[18px]">format_list_numbered</span></button>
-                      <div className="w-px h-4 bg-slate-300 dark:bg-slate-600 mx-1"></div>
-                      <button type="button" className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400"><span className="material-symbols-outlined text-[18px]">link</span></button>
-                    </div>
-                    <textarea rows={5} placeholder="Describe the product specifics, materials used, and care instructions..." className="w-full border-none p-4 text-sm text-slate-700 dark:text-slate-300 focus:ring-0 resize-none bg-transparent"></textarea>
-                  </div>
+                  <textarea
+                    rows={5}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Describe the product specifics, materials, and care instructions..."
+                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-300 p-4 resize-none focus:ring-primary focus:border-primary"
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Pricing & Inventory Grid */}
+            {/* Pricing & Inventory */}
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
-              <h3 className="font-bold text-slate-900 dark:text-white text-lg mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">Pricing & Inventory</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <h3 className="font-bold text-slate-900 dark:text-white text-lg mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
+                Pricing & Inventory
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Base Price (NGN)</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Base Price (NGN) *</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <span className="text-slate-500 text-sm">₦</span>
                     </div>
-                    <input type="number" placeholder="0.00" className="w-full pl-8 rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary" />
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      step="500"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full pl-8 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm p-2.5 focus:ring-primary focus:border-primary"
+                    />
                   </div>
                 </div>
                 <div>
@@ -174,123 +370,127 @@ export default function AddProduct() {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <span className="text-slate-500 text-sm">₦</span>
                     </div>
-                    <input type="number" placeholder="0.00" className="w-full pl-8 rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary" />
+                    <input
+                      type="number"
+                      min="0"
+                      step="500"
+                      value={compareAtPrice}
+                      onChange={(e) => setCompareAtPrice(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full pl-8 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm p-2.5 focus:ring-primary focus:border-primary"
+                    />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">SKU (Stock Keeping Unit)</label>
-                  <input type="text" placeholder="BG-2024-001" className="w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary" />
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">SKU</label>
+                  <input
+                    type="text"
+                    value={sku}
+                    onChange={(e) => setSku(e.target.value)}
+                    placeholder="BG-2025-001"
+                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm p-2.5 focus:ring-primary focus:border-primary"
+                  />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Barcode / ISBN <span className="text-xs font-normal text-slate-400">(Optional)</span></label>
-                  <input type="text" className="w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary" />
-                </div>
-              </div>
-              <div className="flex items-center gap-4 mb-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="rounded text-primary focus:ring-primary border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800" />
-                  <span className="text-sm text-slate-700 dark:text-slate-300">Track quantity</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="rounded text-primary focus:ring-primary border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800" />
-                  <span className="text-sm text-slate-700 dark:text-slate-300">Continue selling when out of stock</span>
-                </label>
               </div>
             </div>
 
-            {/* Variants (Sizes) */}
+            {/* Variants */}
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
               <div className="flex items-center justify-between mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
-                <h3 className="font-bold text-slate-900 dark:text-white text-lg">Size Variants</h3>
-                <button type="button" className="text-sm text-primary font-bold hover:text-[#b09055] transition-colors">
+                <h3 className="font-bold text-slate-900 dark:text-white text-lg">Size Variants *</h3>
+                <button
+                  type="button"
+                  onClick={addVariant}
+                  className="text-sm text-primary font-bold hover:text-primary/80 transition-colors"
+                >
                   + Add Size
                 </button>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
+                <table className="w-full text-sm">
                   <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium uppercase text-xs">
                     <tr>
-                      <th className="px-4 py-3 rounded-l-lg">Size (EU)</th>
-                      <th className="px-4 py-3">Price Modifier</th>
-                      <th className="px-4 py-3">Stock Qty</th>
-                      <th className="px-4 py-3 rounded-r-lg w-10"></th>
+                      <th className="px-3 py-3 text-left">Size (EU)</th>
+                      <th className="px-3 py-3 text-left">Color</th>
+                      <th className="px-3 py-3 text-left">Hex</th>
+                      <th className="px-3 py-3 text-left">+Price</th>
+                      <th className="px-3 py-3 text-left">Stock</th>
+                      <th className="px-3 py-3 w-10" />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    <tr className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
-                        <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 text-lg">drag_indicator</span>
-                          EU 40
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400">—</td>
-                      <td className="px-4 py-3">
-                        <input type="number" defaultValue={12} className="w-20 py-1 px-2 text-sm border border-slate-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary" />
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button className="text-slate-400 hover:text-red-500 transition-colors">
-                          <span className="material-symbols-outlined text-lg">delete</span>
-                        </button>
-                      </td>
-                    </tr>
-                    <tr className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
-                        <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 text-lg">drag_indicator</span>
-                          EU 41
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400">—</td>
-                      <td className="px-4 py-3">
-                        <input type="number" defaultValue={8} className="w-20 py-1 px-2 text-sm border border-slate-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary" />
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button className="text-slate-400 hover:text-red-500 transition-colors">
-                          <span className="material-symbols-outlined text-lg">delete</span>
-                        </button>
-                      </td>
-                    </tr>
-                    <tr className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
-                        <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 text-lg">drag_indicator</span>
-                          EU 42
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400">—</td>
-                      <td className="px-4 py-3">
-                        <input type="number" defaultValue={5} className="w-20 py-1 px-2 text-sm border border-slate-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary" />
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button className="text-slate-400 hover:text-red-500 transition-colors">
-                          <span className="material-symbols-outlined text-lg">delete</span>
-                        </button>
-                      </td>
-                    </tr>
-                    <tr className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
-                        <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 text-lg">drag_indicator</span>
-                          EU 43
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400">—</td>
-                      <td className="px-4 py-3">
-                        <input type="number" defaultValue={0} className="w-20 py-1 px-2 text-sm border border-slate-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary" />
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button className="text-slate-400 hover:text-red-500 transition-colors">
-                          <span className="material-symbols-outlined text-lg">delete</span>
-                        </button>
-                      </td>
-                    </tr>
+                    {variants.map((v) => (
+                      <tr key={v.key} className="group hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                        <td className="px-3 py-3">
+                          <select
+                            value={v.sizeEU}
+                            onChange={(e) => updateVariant(v.key, 'sizeEU', e.target.value)}
+                            className="w-full text-sm border border-slate-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 p-1.5 focus:ring-primary focus:border-primary"
+                          >
+                            <option value="">—</option>
+                            {DEFAULT_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                        </td>
+                        <td className="px-3 py-3">
+                          <input
+                            type="text"
+                            value={v.color}
+                            onChange={(e) => updateVariant(v.key, 'color', e.target.value)}
+                            placeholder="Tan"
+                            className="w-full text-sm border border-slate-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 p-1.5 focus:ring-primary focus:border-primary max-w-[90px]"
+                          />
+                        </td>
+                        <td className="px-3 py-3">
+                          <input
+                            type="color"
+                            value={v.colorHex || '#888888'}
+                            onChange={(e) => updateVariant(v.key, 'colorHex', e.target.value)}
+                            className="w-9 h-9 rounded border border-slate-300 dark:border-slate-700 cursor-pointer"
+                            title="Pick colour"
+                          />
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="relative">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">₦</span>
+                            <input
+                              type="number"
+                              value={v.priceModifier}
+                              onChange={(e) => updateVariant(v.key, 'priceModifier', Number(e.target.value))}
+                              min="0"
+                              step="500"
+                              className="w-20 text-sm border border-slate-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 pl-5 pr-2 py-1.5 focus:ring-primary focus:border-primary"
+                            />
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <input
+                            type="number"
+                            value={v.stockQty}
+                            onChange={(e) => updateVariant(v.key, 'stockQty', Number(e.target.value))}
+                            min="0"
+                            className="w-16 text-sm border border-slate-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 px-2 py-1.5 focus:ring-primary focus:border-primary"
+                          />
+                        </td>
+                        <td className="px-3 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => removeVariant(v.key)}
+                            className="text-slate-400 hover:text-red-500 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-base">delete</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
+              {variants.length === 0 && (
+                <p className="text-sm text-slate-400 text-center py-4">No variants yet. Click + Add Size above.</p>
+              )}
             </div>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

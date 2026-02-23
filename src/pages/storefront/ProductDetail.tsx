@@ -1,23 +1,116 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { api, type Product, type ProductVariant, formatNGN } from '../../lib/api';
+import { useCart } from '../../context/CartContext';
+
+function DetailSkeleton() {
+  return (
+    <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 animate-pulse">
+      <div className="lg:col-span-7 aspect-[4/5] bg-stone-200 dark:bg-stone-800 rounded" />
+      <div className="lg:col-span-5 pt-4 space-y-4">
+        <div className="h-8 bg-stone-200 dark:bg-stone-800 rounded w-3/4" />
+        <div className="h-4 bg-stone-200 dark:bg-stone-800 rounded w-1/2" />
+        <div className="h-6 bg-stone-200 dark:bg-stone-800 rounded w-1/4 mt-4" />
+      </div>
+    </div>
+  );
+}
 
 export default function ProductDetail() {
-  const [selectedColor, setSelectedColor] = useState('Savannah Brown');
-  const [selectedSize, setSelectedSize] = useState('42');
+  const { id: slug } = useParams<{ id: string }>();
+  const { addToCart } = useCart();
+
+  const [product, setProduct] = useState<Product | null>(null);
+  const [related, setRelated] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const [mainImage, setMainImage] = useState('');
+  const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [addedToCart, setAddedToCart] = useState(false);
+
   const [activeAccordion, setActiveAccordion] = useState<string | null>('craft');
 
-  const toggleAccordion = (id: string) => {
-    setActiveAccordion(activeAccordion === id ? null : id);
+  useEffect(() => {
+    if (!slug) return;
+    setLoading(true);
+    setError('');
+    api.get<{ product: Product; related: Product[] }>(`/products/${slug}`)
+      .then((res) => {
+        setProduct(res.product);
+        setRelated(res.related);
+        if (res.product.images[0]) setMainImage(res.product.images[0].url);
+      })
+      .catch(() => setError('Product not found.'))
+      .finally(() => setLoading(false));
+  }, [slug]);
+
+  // Derive available sizes and colours from variants
+  const availableSizes = product
+    ? [...new Set(product.variants.map((v) => v.sizeEU))].sort()
+    : [];
+
+  const availableColors = selectedSize
+    ? [...new Set(
+      product!.variants
+        .filter((v) => v.sizeEU === selectedSize && v.stockQty > 0)
+        .map((v) => v.color ?? '')
+        .filter(Boolean)
+    )]
+    : [];
+
+  // Update selected variant whenever size or color changes
+  useEffect(() => {
+    if (!product || !selectedSize) {
+      setSelectedVariant(null);
+      return;
+    }
+    const match = product.variants.find(
+      (v) => v.sizeEU === selectedSize && (availableColors.length === 0 || v.color === selectedColor)
+    );
+    setSelectedVariant(match ?? null);
+  }, [selectedSize, selectedColor, product]);
+
+  const handleAddToCart = async () => {
+    if (!product || !selectedVariant) return;
+    setAddingToCart(true);
+    try {
+      await addToCart(product.id, selectedVariant.id, quantity);
+      setAddedToCart(true);
+      setTimeout(() => setAddedToCart(false), 2500);
+    } catch (err: any) {
+      alert(err?.message ?? 'Could not add to cart. Please try again.');
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
-  const productImages = [
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuBbI0GADz62_Ubwvh23hXTsDhQPNVQvxBVfabR0enD1I_rhe0W29LgpRXdUIleBjSGLAKK9Vdm_xEZbt26zTXy_cphehzKcYSwIRrl4QDNXXAPArtMN5_z1EsiitehCrD58PBbecglGQw4ZVP-SLcjw6H5kBiPypu4SEJ-uzS1AhkmZSTS1haSsc6jMRb5KbvmxAcmRCzclKFR3eTPEP4sttrN-i4hNGBAgirFt1xzsWgfxzJ8FtYhIfZKC-NtoX7dZRIh3wWco_YZw",
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuDm67IA7RXIA_V5-P7yQtms_Ujf1RHkfqLCnJPbDpssajbPh1Nz_CgkDOo2uSoTORdHg89ewHnUnzciVxRv18fiiXclQVM9f8aZysQh9C-BBXELW8j-Kx9OEfHMvc2K423RG9L7xKtWXM98lG3uosVEM-Qy2BNz84uU-bhSBk6xVNIwFP2m2n46SP_at-b1PBkRZPjU5l8yvg8Ogd6FIfUPhXzNvQiTAR4H-eTn1cCXwHNVh9Jfg1GaPBxB7D-fGh50EV_5SiXOO5HH",
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuC6laHQk2sp0cC3fJVrbJPbjSU0GxypHmst-3VGLpLlLVbXnDILWxOuJcp_k1gyFN8Wddlxg1lJ48xVFwhToZKbzp5b-E3hcxCx5eBHJzTYagCqxVVuqKt-AHS7NqImu02lWMFUyn4snLoPsTz1cbip6tjSejVupxrvjAgKledejifK2JvvV2lDnEpKwTCsWQF0-9-K2lewRwmtufwGWNtCvPzdGLUB7ZDWLcFts57wz99PQ7X5glP2wIfPqsqQc9OVkBV09U65FU-e",
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuDLAZ9DBK_hLhaH6sFtISFBhFor2KcOuY9OzNl1LatqNEiWI_nrjlhdAOv0Lu1qQ46AXovsjCgLFvMvOcyVR_ODhEGdTkw962UiY7T4UqfdMomXwVzLHMGXmSTa1tQLjLvOugGps4317V6wEeDEF6HolHs9EvhV2gdgg6qy1zmWKf-C_sFvkpdKiBAKdKIdmq77uDgAbjRH3huApmxGG3l9QXwaF3A8C3ByYS6vk4tGPwvOZxRDca2DBM3TzS7_09-XbT-znkO-ZEIg"
-  ];
+  const toggleAccordion = (id: string) =>
+    setActiveAccordion(activeAccordion === id ? null : id);
 
-  const [mainImage, setMainImage] = useState(productImages[0]);
+  if (loading) {
+    return (
+      <div className="bg-white dark:bg-stone-950 min-h-screen pt-28 pb-20">
+        <DetailSkeleton />
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="bg-white dark:bg-stone-950 min-h-screen pt-28 pb-20 text-center">
+        <p className="text-slate-500 dark:text-slate-400 text-lg mt-24">{error || 'Product not found.'}</p>
+        <Link to="/shop" className="mt-4 inline-block text-primary underline">Browse all products</Link>
+      </div>
+    );
+  }
+
+  const inStock = selectedVariant ? selectedVariant.stockQty > 0 : true;
+  const effectivePrice = product.price + (selectedVariant?.priceModifier ?? 0);
 
   return (
     <div className="bg-white dark:bg-stone-950 min-h-screen pb-20">
@@ -25,199 +118,241 @@ export default function ProductDetail() {
       <div className="max-w-7xl mx-auto px-6 py-6 text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider">
         <Link to="/" className="hover:text-primary">Home</Link>
         <span className="mx-2">/</span>
-        <Link to="/collections" className="hover:text-primary">Men</Link>
+        <Link to="/shop" className="hover:text-primary">Shop</Link>
+        {product.collection && (
+          <>
+            <span className="mx-2">/</span>
+            <Link to={`/shop?collection=${product.collection.slug}`} className="hover:text-primary">
+              {product.collection.name}
+            </Link>
+          </>
+        )}
         <span className="mx-2">/</span>
-        <span className="hover:text-primary cursor-pointer">Oxfords</span>
-        <span className="mx-2">/</span>
-        <span className="text-stone-900 dark:text-white font-bold">The Oba Oxford</span>
+        <span className="text-stone-900 dark:text-white font-bold">{product.name}</span>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12">
-        {/* Gallery Section */}
+        {/* Gallery */}
         <div className="lg:col-span-7 flex flex-col-reverse md:flex-row gap-4">
           {/* Thumbnails */}
-          <div className="flex md:flex-col gap-4 overflow-x-auto md:overflow-visible hide-scroll">
-            {productImages.map((img, index) => (
-              <button 
-                key={index}
-                onClick={() => setMainImage(img)}
-                className={`w-20 h-20 md:w-24 md:h-24 flex-shrink-0 border-2 ${mainImage === img ? 'border-primary' : 'border-transparent'} rounded-sm overflow-hidden`}
+          <div className="flex md:flex-col gap-4 overflow-x-auto md:overflow-visible">
+            {product.images.map((img) => (
+              <button
+                key={img.id}
+                onClick={() => setMainImage(img.url)}
+                className={`w-20 h-20 md:w-24 md:h-24 flex-shrink-0 border-2 rounded-sm overflow-hidden ${mainImage === img.url ? 'border-primary' : 'border-transparent'
+                  }`}
               >
-                <img src={img} alt={`Product view ${index + 1}`} className="w-full h-full object-cover" />
+                <img src={img.url} alt={img.altText ?? product.name} className="w-full h-full object-cover" />
               </button>
             ))}
           </div>
           {/* Main Image */}
-          <div className="flex-1 bg-stone-100 dark:bg-stone-900 rounded-lg overflow-hidden relative group">
-            <span className="absolute top-4 right-4 bg-white dark:bg-black text-xs font-bold px-3 py-1 uppercase tracking-widest z-10">New Arrival</span>
-            <img src={mainImage} alt="The Oba Oxford" className="w-full h-full object-cover" />
+          <div className="flex-1 bg-stone-100 dark:bg-stone-900 rounded-lg overflow-hidden relative">
+            {product.isFeatured && (
+              <span className="absolute top-4 right-4 bg-white dark:bg-black text-xs font-bold px-3 py-1 uppercase tracking-widest z-10">
+                New Arrival
+              </span>
+            )}
+            {mainImage && (
+              <img src={mainImage} alt={product.name} className="w-full h-full object-cover" />
+            )}
           </div>
         </div>
 
-        {/* Product Info Section */}
+        {/* Product Info */}
         <div className="lg:col-span-5 pt-4">
-          <h1 className="font-serif text-4xl md:text-5xl text-stone-900 dark:text-white mb-2">The Oba Oxford</h1>
-          <p className="text-stone-500 dark:text-stone-400 text-sm mb-6">Handcrafted in Lagos. Defining modern African elegance.</p>
-          
+          <p className="text-xs text-stone-400 uppercase tracking-widest mb-2">
+            {product.collection?.name ?? 'Bata Ganik'}
+          </p>
+          <h1 className="font-serif text-4xl md:text-5xl text-stone-900 dark:text-white mb-2">{product.name}</h1>
+          <p className="text-stone-500 dark:text-stone-400 text-sm mb-6">{product.description}</p>
+
           <div className="flex items-center gap-4 mb-8">
-            <span className="text-2xl font-bold text-primary">₦ 120,000</span>
-            <span className="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded uppercase tracking-wider">In Stock</span>
+            <span className="text-2xl font-bold text-primary">{formatNGN(effectivePrice)}</span>
+            {product.compareAtPrice && (
+              <span className="text-base text-slate-400 line-through">{formatNGN(product.compareAtPrice)}</span>
+            )}
+            {selectedVariant && (
+              <span
+                className={`text-xs font-bold px-2 py-1 rounded uppercase tracking-wider ${inStock
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-700'
+                  }`}
+              >
+                {inStock ? 'In Stock' : 'Out of Stock'}
+              </span>
+            )}
           </div>
 
           {/* Color Selection */}
-          <div className="mb-8">
-            <span className="text-xs font-bold text-stone-900 dark:text-white uppercase tracking-widest block mb-3">Select Color</span>
-            <div className="flex gap-4">
-              <button 
-                onClick={() => setSelectedColor('Savannah Brown')}
-                className={`w-8 h-8 rounded-full bg-[#8B5A2B] ring-2 ring-offset-2 ${selectedColor === 'Savannah Brown' ? 'ring-primary' : 'ring-transparent'}`}
-                title="Savannah Brown"
-              ></button>
-              <button 
-                onClick={() => setSelectedColor('Obsidian Black')}
-                className={`w-8 h-8 rounded-full bg-[#1a1a1a] ring-2 ring-offset-2 ${selectedColor === 'Obsidian Black' ? 'ring-primary' : 'ring-transparent'}`}
-                title="Obsidian Black"
-              ></button>
-              <button 
-                onClick={() => setSelectedColor('Sahara Taupe')}
-                className={`w-8 h-8 rounded-full bg-[#A89F91] ring-2 ring-offset-2 ${selectedColor === 'Sahara Taupe' ? 'ring-primary' : 'ring-transparent'}`}
-                title="Sahara Taupe"
-              ></button>
+          {availableColors.length > 0 && (
+            <div className="mb-6">
+              <span className="text-xs font-bold text-stone-900 dark:text-white uppercase tracking-widest block mb-3">
+                Select Color — <span className="font-normal text-stone-500">{selectedColor}</span>
+              </span>
+              <div className="flex gap-3 flex-wrap">
+                {availableColors.map((color) => {
+                  const variant = product.variants.find(
+                    (v) => v.sizeEU === selectedSize && v.color === color
+                  );
+                  return (
+                    <button
+                      key={color}
+                      onClick={() => setSelectedColor(color)}
+                      title={color}
+                      className={`w-8 h-8 rounded-full ring-2 ring-offset-2 transition-all ${selectedColor === color ? 'ring-primary' : 'ring-transparent hover:ring-stone-400'
+                        }`}
+                      style={{ backgroundColor: variant?.colorHex ?? '#888' }}
+                    />
+                  );
+                })}
+              </div>
             </div>
-            <p className="text-xs text-stone-500 mt-2">Color: <span className="text-stone-900 dark:text-white font-medium">{selectedColor}</span></p>
-          </div>
+          )}
 
           {/* Size Selection */}
           <div className="mb-8">
             <div className="flex justify-between items-center mb-3">
-              <span className="text-xs font-bold text-stone-900 dark:text-white uppercase tracking-widest">Select Size (EU)</span>
-              <button className="text-xs text-primary underline">Size Guide</button>
+              <span className="text-xs font-bold text-stone-900 dark:text-white uppercase tracking-widest">
+                Select Size (EU)
+              </span>
+              <Link to="/size-guide" className="text-xs text-primary underline">Size Guide</Link>
             </div>
-            <div className="grid grid-cols-6 gap-2">
-              {['40', '41', '42', '43', '44', '45'].map((size) => (
-                <button
-                  key={size}
-                  onClick={() => setSelectedSize(size)}
-                  className={`py-3 border ${selectedSize === size ? 'border-primary bg-primary text-white' : 'border-stone-200 dark:border-stone-700 text-stone-900 dark:text-white hover:border-primary'} rounded-sm text-sm font-medium transition-colors`}
-                >
-                  {size}
-                </button>
-              ))}
+            <div className="grid grid-cols-5 gap-2">
+              {availableSizes.map((size) => {
+                const sizeVariants = product.variants.filter((v) => v.sizeEU === size);
+                const hasStock = sizeVariants.some((v) => v.stockQty > 0);
+                return (
+                  <button
+                    key={size}
+                    disabled={!hasStock}
+                    onClick={() => { setSelectedSize(size); setSelectedColor(''); }}
+                    className={`h-10 border rounded text-sm font-medium transition-all ${selectedSize === size
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : hasStock
+                          ? 'border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:border-primary hover:text-primary'
+                          : 'border-stone-100 dark:border-stone-800 text-stone-300 dark:text-stone-700 cursor-not-allowed line-through'
+                      }`}
+                  >
+                    {size}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Add to Cart */}
-          <button className="w-full bg-[#c9a96e] hover:bg-[#b89a5f] text-white font-bold py-4 rounded-sm shadow-lg mb-4 flex items-center justify-center gap-2 transition-all">
-            <span className="material-symbols-outlined">shopping_bag</span>
-            Add to Cart - ₦ 120,000
-          </button>
-          
-          <div className="flex items-center justify-center gap-6 text-xs text-stone-500 dark:text-stone-400 mb-10">
-            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">local_shipping</span> Free shipping within Lagos</span>
-            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">verified</span> Authenticity Guaranteed</span>
+          {/* Quantity + Add to Cart */}
+          <div className="flex gap-4 mb-6">
+            <div className="flex items-center border border-stone-200 dark:border-stone-700 rounded">
+              <button
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                className="px-3 py-3 text-stone-600 dark:text-stone-400 hover:text-primary transition-colors"
+              >
+                <span className="material-symbols-outlined text-sm">remove</span>
+              </button>
+              <span className="px-4 text-sm font-medium text-stone-900 dark:text-white min-w-[32px] text-center">
+                {quantity}
+              </span>
+              <button
+                onClick={() => setQuantity(quantity + 1)}
+                className="px-3 py-3 text-stone-600 dark:text-stone-400 hover:text-primary transition-colors"
+              >
+                <span className="material-symbols-outlined text-sm">add</span>
+              </button>
+            </div>
+
+            <button
+              onClick={handleAddToCart}
+              disabled={!selectedVariant || !inStock || addingToCart}
+              className={`flex-1 py-3 px-6 font-bold uppercase tracking-wider text-sm rounded transition-all flex items-center justify-center gap-2 ${addedToCart
+                  ? 'bg-green-600 text-white'
+                  : !selectedVariant || !inStock
+                    ? 'bg-stone-200 dark:bg-stone-800 text-stone-400 cursor-not-allowed'
+                    : 'bg-primary text-white hover:bg-primary/90'
+                }`}
+            >
+              {addingToCart ? (
+                <span className="animate-spin material-symbols-outlined text-sm">progress_activity</span>
+              ) : addedToCart ? (
+                <>
+                  <span className="material-symbols-outlined text-sm">check</span> Added to Bag
+                </>
+              ) : !selectedVariant ? (
+                'Select a size'
+              ) : !inStock ? (
+                'Out of Stock'
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-sm">shopping_bag</span> Add to Bag
+                </>
+              )}
+            </button>
           </div>
 
           {/* Accordions */}
-          <div className="border-t border-stone-200 dark:border-stone-800">
-            {/* The Craft */}
-            <div className="border-b border-stone-200 dark:border-stone-800">
-              <button 
-                onClick={() => toggleAccordion('craft')}
-                className="w-full py-4 flex justify-between items-center text-left"
-              >
-                <span className="font-medium text-stone-900 dark:text-white">The Craft</span>
-                <span className="material-symbols-outlined text-stone-400 transition-transform duration-300" style={{ transform: activeAccordion === 'craft' ? 'rotate(180deg)' : 'rotate(0deg)' }}>expand_more</span>
-              </button>
-              <div className={`overflow-hidden transition-all duration-300 ${activeAccordion === 'craft' ? 'max-h-96 pb-4' : 'max-h-0'}`}>
-                <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
-                  Constructed from full-grain Italian leather sourced ethically and dyed using traditional methods. The Oba Oxford features a Goodyear-welted sole for durability and comfort, hand-stitched by master artisans in our Lagos workshop. The interior is lined with soft calfskin to ensure breathability.
-                </p>
+          <div className="border-t border-stone-200 dark:border-stone-800 mt-8">
+            {[
+              {
+                id: 'craft',
+                title: 'Heritage & Craft',
+                content: product.heritageStory ?? 'Each pair is meticulously handcrafted by master artisans using time-honoured techniques passed down through generations.',
+              },
+              {
+                id: 'materials',
+                title: 'Materials',
+                content: 'Premium full-grain leather sourced from certified Nigerian tanneries. Leather sole for breathability; rubber heel cap for durability.',
+              },
+              {
+                id: 'shipping',
+                title: 'Shipping & Returns',
+                content: 'Free shipping on orders over ₦50,000. Delivered in 3–5 business days within Nigeria; 7–14 days internationally. Returns accepted within 30 days.',
+              },
+            ].map(({ id, title, content }) => (
+              <div key={id} className="border-b border-stone-200 dark:border-stone-800">
+                <button
+                  onClick={() => toggleAccordion(id)}
+                  className="w-full flex justify-between items-center py-4 text-left text-sm font-bold uppercase tracking-widest text-stone-900 dark:text-white hover:text-primary transition-colors"
+                >
+                  {title}
+                  <span className="material-symbols-outlined text-sm">
+                    {activeAccordion === id ? 'remove' : 'add'}
+                  </span>
+                </button>
+                {activeAccordion === id && (
+                  <p className="pb-4 text-sm text-stone-500 dark:text-stone-400 leading-relaxed">{content}</p>
+                )}
               </div>
-            </div>
-
-            {/* Care Instructions */}
-            <div className="border-b border-stone-200 dark:border-stone-800">
-              <button 
-                onClick={() => toggleAccordion('care')}
-                className="w-full py-4 flex justify-between items-center text-left"
-              >
-                <span className="font-medium text-stone-900 dark:text-white">Care Instructions</span>
-                <span className="material-symbols-outlined text-stone-400 transition-transform duration-300" style={{ transform: activeAccordion === 'care' ? 'rotate(180deg)' : 'rotate(0deg)' }}>expand_more</span>
-              </button>
-              <div className={`overflow-hidden transition-all duration-300 ${activeAccordion === 'care' ? 'max-h-96 pb-4' : 'max-h-0'}`}>
-                <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
-                  Clean with a soft, dry cloth. Use a high-quality leather conditioner every few months to maintain suppleness. Avoid direct sunlight and moisture. Store in the provided dust bag when not in use.
-                </p>
-              </div>
-            </div>
-
-            {/* Delivery & Returns */}
-            <div className="border-b border-stone-200 dark:border-stone-800">
-              <button 
-                onClick={() => toggleAccordion('delivery')}
-                className="w-full py-4 flex justify-between items-center text-left"
-              >
-                <span className="font-medium text-stone-900 dark:text-white">Delivery & Returns</span>
-                <span className="material-symbols-outlined text-stone-400 transition-transform duration-300" style={{ transform: activeAccordion === 'delivery' ? 'rotate(180deg)' : 'rotate(0deg)' }}>expand_more</span>
-              </button>
-              <div className={`overflow-hidden transition-all duration-300 ${activeAccordion === 'delivery' ? 'max-h-96 pb-4' : 'max-h-0'}`}>
-                <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
-                  Free delivery within Lagos (1-2 business days). Nationwide delivery (3-5 business days). International shipping available. Returns accepted within 14 days of purchase in original condition.
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Complete the Look */}
-      <div className="max-w-7xl mx-auto px-6 mt-24">
-        <div className="flex justify-between items-end mb-8">
-          <h2 className="font-serif text-3xl md:text-4xl text-stone-900 dark:text-white">Complete the Look</h2>
-          <Link to="/collections" className="text-primary text-sm font-medium hover:underline flex items-center gap-1">
-            View Collection <span className="material-symbols-outlined text-sm">arrow_forward</span>
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Item 1 */}
-          <div className="group">
-            <div className="aspect-square bg-stone-100 dark:bg-stone-800 rounded-lg overflow-hidden mb-4 relative">
-              <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuArfYU1GgdDyPuvM1vwBQ73lXf7KvuxA-a9RVqme8UGYPHMNusQA45030xEWz04zizYh7NwbtgNUv0JuZKtKRDiY2T-MikLI1TjJiI7396FxHly144w9ipa6rNBd2MQVzRgf22Wf8qFMHH_9AZMifYQLLsWAQeLlzCiQz8UaVTZKOvQKzxCuk7bi6PY_PuRKe4ipl8OQLkCjvqhrh_ZGXQwUqL3BuBas9QnTOKr_lPV6aoAHJFbxr0bjofjjT0Jw1WbedhTDHB0nubI" alt="Belt" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-            </div>
-            <h3 className="font-serif text-lg text-stone-900 dark:text-white">The Heritage Belt</h3>
-            <p className="text-xs text-stone-500 mb-2">Full Grain Leather</p>
-            <p className="text-primary font-bold">₦ 25,000</p>
+      {/* Related Products */}
+      {related.length > 0 && (
+        <section className="max-w-7xl mx-auto px-6 mt-24">
+          <h2 className="font-serif text-3xl text-stone-900 dark:text-white mb-8">Complete the Look</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {related.map((p) => (
+              <Link key={p.id} to={`/products/${p.slug}`} className="group">
+                <div className="aspect-[3/4] bg-stone-100 dark:bg-stone-900 overflow-hidden rounded mb-3">
+                  {p.images[0] && (
+                    <img
+                      src={p.images[0].url}
+                      alt={p.images[0].altText ?? p.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  )}
+                </div>
+                <h3 className="font-serif text-base text-stone-900 dark:text-white group-hover:text-primary transition-colors">
+                  {p.name}
+                </h3>
+                <p className="text-sm font-bold text-stone-700 dark:text-stone-300 mt-1">{formatNGN(p.price)}</p>
+              </Link>
+            ))}
           </div>
-          {/* Item 2 */}
-          <div className="group">
-            <div className="aspect-square bg-stone-100 dark:bg-stone-800 rounded-lg overflow-hidden mb-4 relative">
-              <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwtfk-IFmxMcdoWd4KP_fdk54u5SIh60BH8qcSRRyOUia2EgmZvtMSYpShek4Y5U3PeRhMy4IaC-X3cm3lUp0LOLLWrDRYrmKX15cXurho9FG9k0O3dozUNDi1qdRfQrs0s0e5ELnrt8hWU2dRIcxLjJjEoOCNLxJPYIHZDVKa6exd1pOcznSGwjwz6LMlRBI24HH8MCXmm39vAFBY98yCTEbDV9-fuzO0ZUz6GzPC9JAwPY3DvPG8qFYbPvQfoA2K_0VSiWAKw1Ze" alt="Bag" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-            </div>
-            <h3 className="font-serif text-lg text-stone-900 dark:text-white">The Weekender</h3>
-            <p className="text-xs text-stone-500 mb-2">Hand-stitched Duffle</p>
-            <p className="text-primary font-bold">₦ 185,000</p>
-          </div>
-          {/* Item 3 */}
-          <div className="group">
-            <div className="aspect-square bg-stone-100 dark:bg-stone-800 rounded-lg overflow-hidden mb-4 relative">
-              <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEIMuP1P06qsNfV0aoHOfgyU-VjzKIXVSSFEfWnwyGmgwgQi99GyQLP7zfo2I2TOHY8DNI2qwzMhxWnyThFiX2_pifkvo40utu5PrRzWq3AFeu2mnlUIP-JOx46aGAqL9ukubQZBDtsgw10mCCmzeak_REhCiqhQ6lAFcLc6k_epxYB0q-mGo7L5IGIvlSuFuKqAxbOaQ5PGhmPQyEBwTT5T2WumBrOq8_vXddbgOqeXOFrGL5f2rvmcF0VoLuUkvJrBSsnqzR7doL" alt="Loafer" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-            </div>
-            <h3 className="font-serif text-lg text-stone-900 dark:text-white">The Azure Loafer</h3>
-            <p className="text-xs text-stone-500 mb-2">Premium Suede</p>
-            <p className="text-primary font-bold">₦ 95,000</p>
-          </div>
-          {/* Item 4 */}
-          <div className="group">
-            <div className="aspect-square bg-stone-100 dark:bg-stone-800 rounded-lg overflow-hidden mb-4 relative">
-              <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuACnQ8n3h1Ag-TIge3HgbK8YMOjakdNLbnsG5hN1mcO4dug8dOgSriVeXyLmsIaQMJTeZK34-PSEfmH9lrM4180Jiix_S_4oYTq-5fKwGRbNDmb6x7LOLevBJRqWbVhXSRkxbFwjtvPKZENNabIjp3LfINtAzVmRTNvtO7yDnOqqtX2hzGI7mwZQjQt2e8x_m3dgAQx4ov2yNf_7XdwZIOLh1WZR2T0rDdvzPd0yZ8tKrE_9n8I_k3D3s6UoTGdoYL4XmCMF1e796WW" alt="Care Kit" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-            </div>
-            <h3 className="font-serif text-lg text-stone-900 dark:text-white">Shoe Care Kit</h3>
-            <p className="text-xs text-stone-500 mb-2">Complete Set</p>
-            <p className="text-primary font-bold">₦ 15,000</p>
-          </div>
-        </div>
-      </div>
+        </section>
+      )}
     </div>
   );
 }

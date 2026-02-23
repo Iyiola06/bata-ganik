@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #C29D59;
+  --background-light: #F9F8F6;
+  --background-dark: #0A0A0A;
+}
+
+@layer base {
+  body {
+    @apply antialiased text-stone-900 bg-stone-50;
+  }
+}
