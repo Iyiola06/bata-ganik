@@ -1,21 +1,24 @@
 import { Resend } from 'resend'
 import type { Order } from '@prisma/client'
 
-export const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazily initialize — env vars aren't available at module-load time during Next.js build
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY)
+}
 
 const FROM = process.env.EMAIL_FROM ?? 'Bata Ganik <orders@bataganik.com>'
 
 export async function sendOrderConfirmationEmail(
-    email: string,
-    order: Order & { items: any[] }
+  email: string,
+  order: Order & { items: any[] }
 ) {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
 
-    await resend.emails.send({
-        from: FROM,
-        to: email,
-        subject: `Order Confirmed — ${order.orderNumber}`,
-        html: `
+  await getResend().emails.send({
+    from: FROM,
+    to: email,
+    subject: `Order Confirmed — ${order.orderNumber}`,
+    html: `
       <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #1c1c1c;">
         <div style="background: #1a1a1a; padding: 32px; text-align: center;">
           <h1 style="color: #c9a96e; font-size: 28px; margin: 0; letter-spacing: 4px;">BATA GANIK</h1>
@@ -53,19 +56,19 @@ export async function sendOrderConfirmationEmail(
         </div>
       </div>
     `,
-    })
+  })
 }
 
 export async function sendShippingNotificationEmail(
-    email: string,
-    orderNumber: string,
-    trackingInfo?: string
+  email: string,
+  orderNumber: string,
+  trackingInfo?: string
 ) {
-    await resend.emails.send({
-        from: FROM,
-        to: email,
-        subject: `Your order is on its way — ${orderNumber}`,
-        html: `
+  await getResend().emails.send({
+    from: FROM,
+    to: email,
+    subject: `Your order is on its way — ${orderNumber}`,
+    html: `
       <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #1c1c1c;">
         <div style="background: #1a1a1a; padding: 32px; text-align: center;">
           <h1 style="color: #c9a96e; font-size: 28px; margin: 0; letter-spacing: 4px;">BATA GANIK</h1>
@@ -78,5 +81,5 @@ export async function sendShippingNotificationEmail(
         </div>
       </div>
     `,
-    })
+  })
 }
