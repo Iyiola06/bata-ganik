@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { api, type Order, formatNGN } from '../../lib/api';
+import { supabase } from '../../lib/supabase';
 
 export default function Account() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -10,11 +11,26 @@ export default function Account() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Profile editing state
+  const [profileFirstName, setProfileFirstName] = useState('');
+  const [profileLastName, setProfileLastName] = useState('');
+  const [profileUpdating, setProfileUpdating] = useState(false);
+  const [profileSuccess, setProfileSuccess] = useState(false);
+  const [profileError, setProfileError] = useState('');
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login', { state: { from: { pathname: '/account' } } });
     }
   }, [user, authLoading, navigate]);
+
+  // Sync profile fields when user loads
+  useEffect(() => {
+    if (user) {
+      setProfileFirstName(user.user_metadata?.first_name ?? '');
+      setProfileLastName(user.user_metadata?.last_name ?? '');
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user?.email) {
@@ -49,6 +65,25 @@ export default function Account() {
     navigate('/');
   };
 
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileUpdating(true);
+    setProfileSuccess(false);
+    setProfileError('');
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { first_name: profileFirstName, last_name: profileLastName },
+      });
+      if (error) throw error;
+      setProfileSuccess(true);
+      setTimeout(() => setProfileSuccess(false), 3000);
+    } catch (err: any) {
+      setProfileError(err?.message ?? 'Failed to update profile.');
+    } finally {
+      setProfileUpdating(false);
+    }
+  };
+
   return (
     <div className="bg-stone-50 dark:bg-stone-900 min-h-screen py-32 px-6">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -73,8 +108,8 @@ export default function Account() {
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
                 className={`w-full flex items-center gap-4 px-6 py-4 text-sm font-medium transition-colors border-l-4 ${activeTab === item.id
-                    ? 'border-primary bg-stone-50 dark:bg-stone-700 text-stone-900 dark:text-white'
-                    : 'border-transparent text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-700 hover:text-stone-900 dark:hover:text-white'
+                  ? 'border-primary bg-stone-50 dark:bg-stone-700 text-stone-900 dark:text-white'
+                  : 'border-transparent text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-700 hover:text-stone-900 dark:hover:text-white'
                   }`}
               >
                 <span className="material-symbols-outlined">{item.icon}</span>
@@ -225,22 +260,41 @@ export default function Account() {
           {activeTab === 'profile' && (
             <div className="bg-white dark:bg-stone-800 p-8 rounded-lg shadow-sm max-w-2xl">
               <h2 className="font-serif text-2xl text-stone-900 dark:text-white mb-8">Personal Information</h2>
-              <form className="space-y-6">
+              <form className="space-y-6" onSubmit={handleUpdateProfile}>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold uppercase text-slate-400 mb-2">First Name</label>
-                    <input type="text" defaultValue={user.user_metadata?.first_name} className="w-full bg-stone-50 dark:bg-stone-700 border-none rounded p-3" />
+                    <input
+                      type="text"
+                      value={profileFirstName}
+                      onChange={(e) => setProfileFirstName(e.target.value)}
+                      className="w-full bg-stone-50 dark:bg-stone-700 border border-stone-200 dark:border-stone-600 rounded p-3 text-stone-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-bold uppercase text-slate-400 mb-2">Last Name</label>
-                    <input type="text" defaultValue={user.user_metadata?.last_name} className="w-full bg-stone-50 dark:bg-stone-700 border-none rounded p-3" />
+                    <input
+                      type="text"
+                      value={profileLastName}
+                      onChange={(e) => setProfileLastName(e.target.value)}
+                      className="w-full bg-stone-50 dark:bg-stone-700 border border-stone-200 dark:border-stone-600 rounded p-3 text-stone-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-400 mb-2">Email</label>
                   <input type="email" readOnly value={user.email} className="w-full bg-stone-100 dark:bg-stone-600 border-none rounded p-3 text-stone-500 cursor-not-allowed" />
                 </div>
-                <button type="button" className="bg-primary text-white font-bold px-8 py-3 rounded hover:bg-[#b09055] transition-colors">Update Profile</button>
+                {profileError && <p className="text-red-500 text-sm">{profileError}</p>}
+                {profileSuccess && <p className="text-green-600 text-sm font-medium flex items-center gap-1"><span className="material-symbols-outlined text-sm">check_circle</span> Profile updated successfully!</p>}
+                <button
+                  type="submit"
+                  disabled={profileUpdating}
+                  className="bg-primary text-white font-bold px-8 py-3 rounded hover:bg-[#b09055] transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {profileUpdating ? <span className="animate-spin material-symbols-outlined text-sm">progress_activity</span> : null}
+                  {profileUpdating ? 'Saving...' : 'Update Profile'}
+                </button>
               </form>
             </div>
           )}

@@ -52,3 +52,22 @@ export async function DELETE(request: NextRequest) {
     await prisma.discountCode.delete({ where: { id } })
     return NextResponse.json({ message: 'Deleted' })
 }
+
+// PATCH /api/admin/discount-codes?id=xxx — toggle active or other fields
+export async function PATCH(request: NextRequest) {
+    try {
+        const { searchParams } = new URL(request.url)
+        const id = searchParams.get('id')
+        if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
+
+        const body = await request.json()
+        const code = await prisma.discountCode.update({
+            where: { id },
+            data: body,
+        })
+        return NextResponse.json({ code })
+    } catch (error) {
+        console.error('[PATCH /api/admin/discount-codes]', error)
+        return NextResponse.json({ error: 'Failed to update discount code' }, { status: 500 })
+    }
+}

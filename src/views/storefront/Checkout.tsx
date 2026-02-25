@@ -19,8 +19,9 @@ interface ShippingAddress {
 }
 
 interface DiscountData {
+  id: string;
   code: string;
-  discountType: 'PERCENTAGE' | 'FIXED';
+  discountType: 'percentage' | 'fixed';
   discountValue: number;
   discountAmount: number;
 }
@@ -75,15 +76,16 @@ export default function Checkout() {
     setValidatingCode(true);
     setDiscountError('');
     try {
-      const res = await api.post<{ valid: boolean; discountAmount: number; discountCode: any }>(
+      const res = await api.post<{ discount: { id: string; code: string; type: string; value: number; discountAmount: number } }>(
         '/discount/validate',
         { code: discountCode.toUpperCase(), orderTotal: subtotal }
       );
       setDiscountData({
-        code: discountCode.toUpperCase(),
-        discountType: res.discountCode.discountType,
-        discountValue: res.discountCode.discountValue,
-        discountAmount: res.discountAmount,
+        id: res.discount.id,
+        code: res.discount.code,
+        discountType: res.discount.type as 'percentage' | 'fixed',
+        discountValue: res.discount.value,
+        discountAmount: res.discount.discountAmount,
       });
     } catch (err: any) {
       setDiscountError(err?.message ?? 'Invalid discount code');
@@ -111,9 +113,18 @@ export default function Checkout() {
         guestLastName: address.lastName,
         guestEmail: address.email,
         guestPhone: address.phone,
-        shippingAddress: address,
+        shippingAddress: {
+          firstName: address.firstName,
+          lastName: address.lastName,
+          phone: address.phone,
+          addressLine1: address.address,
+          city: address.city,
+          state: address.state,
+          country: address.country,
+        },
         shippingFee: SHIPPING_FEE,
-        discountCode: discountData?.code,
+        discountCodeId: discountData?.id,
+        discountAmount: discountData?.discountAmount ?? 0,
         paymentGateway: 'paystack',
         currency: 'NGN',
       });
@@ -147,9 +158,18 @@ export default function Checkout() {
         guestLastName: address.lastName,
         guestEmail: address.email,
         guestPhone: address.phone,
-        shippingAddress: address,
+        shippingAddress: {
+          firstName: address.firstName,
+          lastName: address.lastName,
+          phone: address.phone,
+          addressLine1: address.address,
+          city: address.city,
+          state: address.state,
+          country: address.country,
+        },
         shippingFee: SHIPPING_FEE,
-        discountCode: discountData?.code,
+        discountCodeId: discountData?.id,
+        discountAmount: discountData?.discountAmount ?? 0,
         paymentGateway: 'stripe',
         currency: currency.toLowerCase(),
       });
@@ -162,9 +182,7 @@ export default function Checkout() {
       });
 
       await refreshCart();
-      // 3. Redirect to a Stripe checkout confirm page with the clientSecret
-      // For simplicity we redirect to order-confirmation with the orderId
-      // In production you'd render Stripe Elements here
+      // 3. Redirect to order-confirmation
       navigate(`/order-confirmation?orderId=${orderRes.order.id}&clientSecret=${payRes.clientSecret}`);
     } catch (err: any) {
       setError(err?.message ?? 'Payment initialization failed. Please try again.');
@@ -284,8 +302,8 @@ export default function Checkout() {
                         key={opt.value}
                         onClick={() => setCurrency(opt.value as Currency)}
                         className={`border rounded-lg p-4 cursor-pointer transition-all ${currency === opt.value
-                            ? 'border-primary ring-1 ring-primary bg-primary/5'
-                            : 'border-neutral-200 dark:border-neutral-700 hover:border-primary/50'
+                          ? 'border-primary ring-1 ring-primary bg-primary/5'
+                          : 'border-neutral-200 dark:border-neutral-700 hover:border-primary/50'
                           }`}
                       >
                         <p className="font-bold text-sm text-slate-900 dark:text-white">{opt.label}</p>
@@ -399,7 +417,7 @@ export default function Checkout() {
                 {discountData && (
                   <p className="text-green-600 text-xs mt-1 flex items-center gap-1">
                     <span className="material-symbols-outlined text-xs">check</span>
-                    {discountData.discountType === 'PERCENTAGE'
+                    {discountData.discountType === 'percentage'
                       ? `${discountData.discountValue}% off applied`
                       : `${formatNGN(discountData.discountValue)} off applied`}
                   </p>

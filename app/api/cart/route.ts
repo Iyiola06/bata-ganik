@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
         if (!variant) {
             return NextResponse.json({ error: 'Variant not found' }, { status: 404 })
         }
-        if (variant.stockQty < quantity && !variant) {
+        if (variant.stockQty < quantity) {
             return NextResponse.json({ error: 'Not enough stock' }, { status: 400 })
         }
 

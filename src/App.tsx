@@ -21,6 +21,9 @@ import Dashboard from './views/admin/Dashboard';
 import Products from './views/admin/Products';
 import AddProduct from './views/admin/AddProduct';
 import Orders from './views/admin/Orders';
+import DiscountCodes from './views/admin/DiscountCodes';
+import AdminLogin from './views/admin/AdminLogin';
+import AdminSignup from './views/admin/AdminSignup';
 import Login from './views/storefront/Login';
 import AuthError from './views/storefront/AuthError';
 import { AuthProvider } from './context/AuthContext';
@@ -60,12 +63,14 @@ export default function App() {
       </Route>
 
       {/* Admin Routes */}
-      <Route path="/admin/login" element={<Login />} />
+      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/admin/invite/:token" element={<AdminSignup />} />
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="products" element={<Products />} />
         <Route path="products/new" element={<AddProduct />} />
         <Route path="orders" element={<Orders />} />
+        <Route path="discount-codes" element={<DiscountCodes />} />
         <Route path="customers" element={<Placeholder title="Customers" />} />
         <Route path="analytics" element={<Placeholder title="Analytics" />} />
         <Route path="settings" element={<Placeholder title="Settings" />} />

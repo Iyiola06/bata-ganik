@@ -4,8 +4,8 @@ import { createServerClient } from '@supabase/ssr'
 export const middleware: NextMiddleware = async (request) => {
     const { pathname } = request.nextUrl
 
-    // Only protect /admin routes (except /admin/login)
-    if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+    // Only protect /admin routes (except /admin/login and /admin/invite)
+    if (pathname.startsWith('/admin') && pathname !== '/admin/login' && !pathname.startsWith('/admin/invite')) {
         let response = NextResponse.next({ request })
 
         const supabase = createServerClient(

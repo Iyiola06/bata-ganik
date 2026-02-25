@@ -16,12 +16,12 @@ export default function AdminLayout() {
           {/* Brand */}
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xl overflow-hidden relative">
-               <img 
-                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBcQ_Z__niFb9bU-8nBxLFQcOCkz58iEcVDV2tiWJuSpcthgiNLISInKl-PYhMj7AMlkXffex3usJCaciU4lVNEEqlz1xqP4DqZPznrB61klQ2jl_SzCVfnz8OJSVRvWcp-28RhBFH44d3cBx6tCVR1zNsKX0-G2amIgaLXJBbFufQnI8GcIkRoE0mmS54q1L3AYSCEW15znJM1Jy-IxOUyIYLumKAmXWAphwXDQ-x7HDJIuQ-8ss7a8v1G0_3zy77wx3U5W6wx7rB" 
-                 alt="Bata Ganik Logo Pattern" 
-                 className="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-multiply" 
-               />
-               <span className="relative z-10">B</span>
+              <img
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBcQ_Z__niFb9bU-8nBxLFQcOCkz58iEcVDV2tiWJuSpcthgiNLISInKl-PYhMj7AMlkXffex3usJCaciU4lVNEEqlz1xqP4DqZPznrB61klQ2jl_SzCVfnz8OJSVRvWcp-28RhBFH44d3cBx6tCVR1zNsKX0-G2amIgaLXJBbFufQnI8GcIkRoE0mmS54q1L3AYSCEW15znJM1Jy-IxOUyIYLumKAmXWAphwXDQ-x7HDJIuQ-8ss7a8v1G0_3zy77wx3U5W6wx7rB"
+                alt="Bata Ganik Logo Pattern"
+                className="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-multiply"
+              />
+              <span className="relative z-10">B</span>
             </div>
             <div className="flex flex-col">
               <h1 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight">Bata Ganik</h1>
@@ -30,43 +30,50 @@ export default function AdminLayout() {
           </div>
           {/* Navigation Links */}
           <nav className="flex flex-col gap-1">
-            <Link 
-              to="/admin" 
+            <Link
+              to="/admin"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive('/admin') && location.pathname === '/admin' ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}
             >
               <span className={`material-symbols-outlined ${isActive('/admin') && location.pathname === '/admin' ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`}>grid_view</span>
               <span className={`text-sm ${isActive('/admin') && location.pathname === '/admin' ? 'font-bold' : 'font-medium'}`}>Dashboard</span>
             </Link>
-            <Link 
-              to="/admin/products" 
+            <Link
+              to="/admin/products"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive('/admin/products') ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}
             >
               <span className={`material-symbols-outlined ${isActive('/admin/products') ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`} style={isActive('/admin/products') ? { fontVariationSettings: "'FILL' 1" } : {}}>shopping_bag</span>
               <span className={`text-sm ${isActive('/admin/products') ? 'font-bold' : 'font-medium'}`}>Products</span>
             </Link>
-            <Link 
-              to="/admin/orders" 
+            <Link
+              to="/admin/orders"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive('/admin/orders') ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}
             >
               <span className={`material-symbols-outlined ${isActive('/admin/orders') ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`}>package_2</span>
               <span className={`text-sm ${isActive('/admin/orders') ? 'font-bold' : 'font-medium'}`}>Orders</span>
             </Link>
-            <Link 
-              to="/admin/customers" 
+            <Link
+              to="/admin/discount-codes"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive('/admin/discount-codes') ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}
+            >
+              <span className={`material-symbols-outlined ${isActive('/admin/discount-codes') ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`}>discount</span>
+              <span className={`text-sm ${isActive('/admin/discount-codes') ? 'font-bold' : 'font-medium'}`}>Discounts</span>
+            </Link>
+            <Link
+              to="/admin/customers"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive('/admin/customers') ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}
             >
               <span className={`material-symbols-outlined ${isActive('/admin/customers') ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`}>group</span>
               <span className={`text-sm ${isActive('/admin/customers') ? 'font-bold' : 'font-medium'}`}>Customers</span>
             </Link>
-            <Link 
-              to="/admin/analytics" 
+            <Link
+              to="/admin/analytics"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive('/admin/analytics') ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}
             >
               <span className={`material-symbols-outlined ${isActive('/admin/analytics') ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`}>bar_chart</span>
               <span className={`text-sm ${isActive('/admin/analytics') ? 'font-bold' : 'font-medium'}`}>Analytics</span>
             </Link>
-            <Link 
-              to="/admin/settings" 
+            <Link
+              to="/admin/settings"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive('/admin/settings') ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}
             >
               <span className={`material-symbols-outlined ${isActive('/admin/settings') ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`}>settings</span>

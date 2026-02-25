@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { api, type Product, formatNGN } from '../../lib/api';
 
 const STATUS_BADGE: Record<string, string> = {
@@ -9,11 +9,16 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function Products() {
+  const location = useLocation();
   const [products, setProducts] = useState<(Product & { totalStock: number })[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [stockFilter, setStockFilter] = useState('');
+  const [stockFilter, setStockFilter] = useState(() => {
+    // Initialize from URL query param
+    const params = new URLSearchParams(location.search);
+    return params.get('stock') ?? '';
+  });
   const [page, setPage] = useState(1);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
@@ -152,10 +157,10 @@ export default function Products() {
                     <td className="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">{formatNGN(product.price)}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${(product as any).totalStock <= 5
-                          ? 'bg-orange-100 text-orange-800'
-                          : (product as any).totalStock === 0
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-green-100 text-green-800'
+                        ? 'bg-orange-100 text-orange-800'
+                        : (product as any).totalStock === 0
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-green-100 text-green-800'
                         }`}>
                         {(product as any).totalStock ?? 0} units
                       </span>
@@ -165,8 +170,8 @@ export default function Products() {
                         onClick={() => handleTogglePublish(product.id, product.isPublished)}
                         disabled={toggling === product.id}
                         className={`text-xs font-bold px-2.5 py-1 rounded-full transition-colors ${product.isPublished
-                            ? 'bg-green-100 text-green-800 hover:bg-red-100 hover:text-red-800'
-                            : 'bg-slate-100 text-slate-600 hover:bg-green-100 hover:text-green-800'
+                          ? 'bg-green-100 text-green-800 hover:bg-red-100 hover:text-red-800'
+                          : 'bg-slate-100 text-slate-600 hover:bg-green-100 hover:text-green-800'
                           }`}
                       >
                         {toggling === product.id ? '...' : product.isPublished ? 'Published' : 'Draft'}
