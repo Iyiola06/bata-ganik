@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { resend } from '@/lib/email'
 import { z } from 'zod'
+import { Resend } from 'resend'
+
+function getResend() { return new Resend(process.env.RESEND_API_KEY) }
 
 const schema = z.object({
     name: z.string().min(1, 'Name is required'),
@@ -19,7 +21,8 @@ export async function POST(request: NextRequest) {
         const message = await prisma.contactMessage.create({ data })
 
         // Email notification to admin
-        await resend.emails.send({
+        await getResend().emails.send({
+
             from: process.env.EMAIL_FROM ?? 'Bata Ganik <orders@bataganik.com>',
             to: 'info@bataganik.com',
             subject: `New Contact Message: ${data.subject ?? 'No Subject'}`,
