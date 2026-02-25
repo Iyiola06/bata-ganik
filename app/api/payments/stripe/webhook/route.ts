@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
                         metadata: {
                             payment_method: paymentIntent.payment_method,
                             amount_received: paymentIntent.amount_received,
-                        },
+                        } as any,
                     },
                 }),
                 prisma.order.update({
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
                         amount: paymentIntent.amount / 100,
                         currency: paymentIntent.currency.toUpperCase(),
                         status: 'failed',
-                        metadata: { error: paymentIntent.last_payment_error },
+                        metadata: { error: paymentIntent.last_payment_error } as any,
                     },
                 })
             }

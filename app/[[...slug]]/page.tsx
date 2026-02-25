@@ -1,7 +1,14 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from '@/src/context/AuthContext';
+import { CartProvider } from '@/src/context/CartContext';
+
+// Dynamically import the App component to ensure it only runs on the client
+// and doesn't cause SSR issues with react-router-dom.
+const App = dynamic(() => import('@/src/App'), { ssr: false });
 
 export default function ClientApp() {
     const [mounted, setMounted] = useState(false);
@@ -11,15 +18,6 @@ export default function ClientApp() {
     }, []);
 
     if (!mounted) return null;
-
-    // In a real migration, we would import the App component here.
-    // Since we are running in Next.js, we need to handle the hydration of the React SPA.
-    // For now, we will dynamically import the main App from src.
-
-    const App = require('@/src/App').default;
-    const { CartProvider } = require('@/src/context/CartContext');
-    const { AuthProvider } = require('@/src/context/AuthContext');
-    const { BrowserRouter } = require('react-router-dom');
 
     return (
         <BrowserRouter>
@@ -31,3 +29,4 @@ export default function ClientApp() {
         </BrowserRouter>
     );
 }
+

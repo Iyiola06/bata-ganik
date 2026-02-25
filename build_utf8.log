@@ -1,0 +1,63 @@
+﻿node.exe :  ΓÜá Warning: Next.js 
+inferred your workspace root, but 
+it may not be correct.
+At C:\Program 
+Files\nodejs\npx.ps1:29 char:3
++   & $NODE_EXE $NPX_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotS 
+   pecified: ( ΓÜá Warning: N...n  
+  ot be correct.:String) [], Rem   
+ oteException
+    + FullyQualifiedErrorId : Nati 
+   veCommandError
+ 
+ We detected multiple lockfiles 
+and selected the directory of 
+C:\server\package-lock.json as the 
+root directory.
+ To silence this warning, set 
+`outputFileTracingRoot` in your 
+Next.js config, or consider 
+removing one of the lockfiles if 
+it's not needed.
+   See https://nextjs.org/docs/app/
+api-reference/config/next-config-js
+/output#caveats for more 
+information.
+ Detected additional lockfiles: 
+   * 
+C:\server\bata\package-lock.json
+
+   Γû▓ Next.js 15.5.12
+   - Environments: .env.local, .env
+   - Experiments (use with caution):
+     ┬╖ serverActions
+
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully in 13.7s
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/39) ...
+Error: useNavigate() may be used 
+only in the context of a <Router> 
+component.
+    at q (C:\server\bata\.next\serv
+er\pages\storefront\Checkout.js:1:6
+56)
+Error occurred prerendering page 
+"/storefront/Checkout". Read more: 
+https://nextjs.org/docs/messages/pr
+erender-error
+Error: useNavigate() may be used 
+only in the context of a <Router> 
+component.
+    at q (C:\server\bata\.next\serv
+er\pages\storefront\Checkout.js:1:6
+56)
+Export encountered an error on 
+/storefront/Checkout, exiting the 
+build.
+ Γ¿» Next.js build worker exited 
+with code: 1 and signal: null
