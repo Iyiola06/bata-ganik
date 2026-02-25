@@ -22,6 +22,7 @@ import Products from './views/admin/Products';
 import AddProduct from './views/admin/AddProduct';
 import Orders from './views/admin/Orders';
 import Login from './views/storefront/Login';
+import AuthError from './views/storefront/AuthError';
 import { AuthProvider } from './context/AuthContext';
 
 const Placeholder = ({ title }: { title: string }) => (
@@ -55,6 +56,7 @@ export default function App() {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/our-story" element={<OurStory />} />
+        <Route path="/auth/auth-code-error" element={<AuthError />} />
       </Route>
 
       {/* Admin Routes */}
