@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-
-// The secret token is checked against an env variable to prevent public access
-const ADMIN_INVITE_TOKEN = process.env.NEXT_PUBLIC_ADMIN_INVITE_TOKEN || '';
+import { api } from '../../lib/api';
 
 export default function AdminSignup() {
     const navigate = useNavigate();
@@ -16,12 +14,8 @@ export default function AdminSignup() {
     const [lastName, setLastName] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [success, setSuccess] = useState(false);
 
-    // Validate the invite token
-    const isValidToken = ADMIN_INVITE_TOKEN && token === ADMIN_INVITE_TOKEN;
-
-    if (!isValidToken) {
+    if (!token) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
                 <div className="text-center">
@@ -47,47 +41,30 @@ export default function AdminSignup() {
         setError('');
 
         try {
-            const { error: authError } = await supabase.auth.signUp({
+            // 1. Create user via server-side API (auto-confirms, auto-promotes first admin)
+            await api.post('/admin/invite/signup', {
                 email,
                 password,
-                options: {
-                    data: {
-                        first_name: firstName,
-                        last_name: lastName,
-                        role_request: 'admin', // Flag for the super_admin to review
-                    },
-                },
+                firstName,
+                lastName,
+                token,
             });
-            if (authError) throw authError;
-            setSuccess(true);
+
+            // 2. Sign in immediately
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+            if (signInError) throw signInError;
+
+            // 3. Redirect to admin dashboard
+            navigate('/admin', { replace: true });
         } catch (err: any) {
             setError(err.message || 'Signup failed');
         } finally {
             setLoading(false);
         }
     };
-
-    if (success) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
-                <div className="w-full max-w-md text-center">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-900/30 mb-6">
-                        <span className="material-symbols-outlined text-3xl text-green-400">check_circle</span>
-                    </div>
-                    <h1 className="text-2xl font-bold text-white mb-3">Account Created</h1>
-                    <p className="text-slate-400 mb-6">
-                        Check your email for the confirmation link. Once confirmed, a super admin will need to grant you admin access before you can log in.
-                    </p>
-                    <button
-                        onClick={() => navigate('/admin/login')}
-                        className="text-primary hover:text-primary/80 font-medium text-sm underline transition-colors"
-                    >
-                        Go to Admin Login
-                    </button>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
