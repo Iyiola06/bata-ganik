@@ -15,6 +15,7 @@ export async function GET() {
             totalOrders,
             ordersThisMonth,
             ordersLastMonth,
+            pendingOrders,
             activeProducts,
             lowStockVariants,
             recentOrders,
@@ -42,6 +43,7 @@ export async function GET() {
             prisma.order.count({
                 where: { createdAt: { gte: startOfLastMonth, lt: startOfMonth } },
             }),
+            prisma.order.count({ where: { status: 'PENDING' } }),
             // Products
             prisma.product.count({ where: { isPublished: true } }),
             prisma.productVariant.count({ where: { stockQty: { lte: 5 } } }),
@@ -87,9 +89,10 @@ export async function GET() {
                 total: totalOrders,
                 thisMonth: ordersThisMonth,
                 change: ordersChange,
+                pending: pendingOrders,
             },
             products: {
-                active: activeProducts,
+                total: activeProducts,
                 lowStock: lowStockVariants,
             },
             recentOrders,

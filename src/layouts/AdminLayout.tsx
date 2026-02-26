@@ -15,13 +15,8 @@ export default function AdminLayout() {
         <div className="p-6 flex flex-col gap-6 flex-1">
           {/* Brand */}
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xl overflow-hidden relative">
-              <img
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBcQ_Z__niFb9bU-8nBxLFQcOCkz58iEcVDV2tiWJuSpcthgiNLISInKl-PYhMj7AMlkXffex3usJCaciU4lVNEEqlz1xqP4DqZPznrB61klQ2jl_SzCVfnz8OJSVRvWcp-28RhBFH44d3cBx6tCVR1zNsKX0-G2amIgaLXJBbFufQnI8GcIkRoE0mmS54q1L3AYSCEW15znJM1Jy-IxOUyIYLumKAmXWAphwXDQ-x7HDJIuQ-8ss7a8v1G0_3zy77wx3U5W6wx7rB"
-                alt="Bata Ganik Logo Pattern"
-                className="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-multiply"
-              />
-              <span className="relative z-10">B</span>
+            <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xl">
+              B
             </div>
             <div className="flex flex-col">
               <h1 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight">Bata Ganik</h1>

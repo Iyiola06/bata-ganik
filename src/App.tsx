@@ -24,6 +24,9 @@ import Orders from './views/admin/Orders';
 import DiscountCodes from './views/admin/DiscountCodes';
 import AdminLogin from './views/admin/AdminLogin';
 import AdminSignup from './views/admin/AdminSignup';
+import Customers from './views/admin/Customers';
+import Analytics from './views/admin/Analytics';
+import Settings from './views/admin/Settings';
 import Login from './views/storefront/Login';
 import AuthError from './views/storefront/AuthError';
 import { AuthProvider } from './context/AuthContext';
@@ -71,9 +74,9 @@ export default function App() {
         <Route path="products/new" element={<AddProduct />} />
         <Route path="orders" element={<Orders />} />
         <Route path="discount-codes" element={<DiscountCodes />} />
-        <Route path="customers" element={<Placeholder title="Customers" />} />
-        <Route path="analytics" element={<Placeholder title="Analytics" />} />
-        <Route path="settings" element={<Placeholder title="Settings" />} />
+        <Route path="customers" element={<Customers />} />
+        <Route path="analytics" element={<Analytics />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>
   );

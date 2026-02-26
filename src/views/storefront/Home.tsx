@@ -47,12 +47,12 @@ export default function Home() {
       <section className="relative min-h-[80vh] w-full flex items-center overflow-hidden bg-[#c4a484]">
         <div
           className="absolute inset-0 z-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDnD0Uv7djQbxEmSYYzaBOKcwG4XFCLEcOxr5mGaRBBQ_bKg3F-d0FcWGXIcyPrG4GNfh6ziCVLzoadkBYEF5qGhncNbxIN3CF79E6suiQFaSZSz4A01WVabC5BwLTBM1u6dt-_dHNwzBt1RVAOhD6aO5NozGno0zGjW-GGKbcpoA1jWTkhPiv64Rj4cOGredJnpUQjuKBDXO6jntZ2tDQE9H0B9TyDBqkAQ2WRfn19tVOoLwCY5WX44NFbdM1o5MFjxp3aHpYa6YBD')" }}
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1549298916-b41d501d3772?w=1920&q=80')" }}
         />
         <div className="absolute inset-0 bg-black/10" />
         <div className="relative z-10 px-6 md:px-12 lg:px-24 max-w-7xl mx-auto w-full pt-20">
           <span className="inline-block py-1 px-3 border border-stone-800/30 text-stone-900 text-xs font-bold tracking-widest uppercase mb-6 bg-white/10 backdrop-blur-sm">
-            Since 1982
+            Since 2020
           </span>
           <h1 className="font-serif text-6xl md:text-8xl text-stone-900 leading-none mb-6">
             Threads of <br />
@@ -189,7 +189,7 @@ export default function Home() {
           </div>
           <div className="flex-1 aspect-video md:aspect-square rounded overflow-hidden">
             <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnD0Uv7djQbxEmSYYzaBOKcwG4XFCLEcOxr5mGaRBBQ_bKg3F-d0FcWGXIcyPrG4GNfh6ziCVLzoadkBYEF5qGhncNbxIN3CF79E6suiQFaSZSz4A01WVabC5BwLTBM1u6dt-_dHNwzBt1RVAOhD6aO5NozGno0zGjW-GGKbcpoA1jWTkhPiv64Rj4cOGredJnpUQjuKBDXO6jntZ2tDQE9H0B9TyDBqkAQ2WRfn19tVOoLwCY5WX44NFbdM1o5MFjxp3aHpYa6YBD"
+              src="https://images.unsplash.com/photo-1605812860427-4024433a70fd?w=800&q=80"
               alt="Artisan crafting Bata Ganik shoes"
               className="w-full h-full object-cover"
             />

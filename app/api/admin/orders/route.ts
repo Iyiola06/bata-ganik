@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     ])
 
     return NextResponse.json({
-        orders,
+        orders: orders.map((o) => ({ ...o, itemCount: o.items.length })),
         pagination: { total, page, limit, pages: Math.ceil(total / limit) },
     })
 }
