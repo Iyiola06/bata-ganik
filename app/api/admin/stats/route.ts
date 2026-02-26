@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/admin/stats — dashboard overview numbers
 export async function GET() {
     try {
@@ -58,13 +60,13 @@ export async function GET() {
             // Revenue by month (last 6 months) — raw query for chart
             prisma.$queryRaw`
         SELECT
-          TO_CHAR(created_at, 'Mon') as month,
-          EXTRACT(MONTH FROM created_at) as month_num,
+          TO_CHAR("createdAt", 'Mon') as month,
+          EXTRACT(MONTH FROM "createdAt") as month_num,
           COALESCE(SUM(total), 0) as value
         FROM orders
-        WHERE payment_status = 'PAID'
-          AND created_at >= NOW() - INTERVAL '6 months'
-        GROUP BY TO_CHAR(created_at, 'Mon'), EXTRACT(MONTH FROM created_at)
+        WHERE "paymentStatus" = 'PAID'
+          AND "createdAt" >= NOW() - INTERVAL '6 months'
+        GROUP BY TO_CHAR("createdAt", 'Mon'), EXTRACT(MONTH FROM "createdAt")
         ORDER BY month_num ASC
       `,
         ])
@@ -98,8 +100,8 @@ export async function GET() {
             recentOrders,
             revenueByMonth,
         })
-    } catch (error) {
+    } catch (error: any) {
         console.error('[GET /api/admin/stats]', error)
-        return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 })
+        return NextResponse.json({ error: error?.message || 'Failed to fetch stats' }, { status: 500 })
     }
 }

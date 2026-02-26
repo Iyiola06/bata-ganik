@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/admin/analytics — full analytics data for the analytics page
 export async function GET() {
     try {
@@ -29,25 +31,25 @@ export async function GET() {
             // Revenue by month (last 12 months)
             prisma.$queryRaw<{ month: string; month_num: number; value: number }[]>`
                 SELECT
-                  TO_CHAR(created_at, 'Mon YY') as month,
-                  EXTRACT(EPOCH FROM DATE_TRUNC('month', created_at)) as month_num,
+                  TO_CHAR("createdAt", 'Mon YY') as month,
+                  EXTRACT(EPOCH FROM DATE_TRUNC('month', "createdAt")) as month_num,
                   COALESCE(SUM(total), 0)::float as value
                 FROM orders
-                WHERE payment_status = 'PAID'
-                  AND created_at >= NOW() - INTERVAL '12 months'
-                GROUP BY TO_CHAR(created_at, 'Mon YY'), DATE_TRUNC('month', created_at)
-                ORDER BY DATE_TRUNC('month', created_at) ASC
+                WHERE "paymentStatus" = 'PAID'
+                  AND "createdAt" >= NOW() - INTERVAL '12 months'
+                GROUP BY TO_CHAR("createdAt", 'Mon YY'), DATE_TRUNC('month', "createdAt")
+                ORDER BY DATE_TRUNC('month', "createdAt") ASC
             `,
             // Top products by revenue
             prisma.$queryRaw<{ name: string; revenue: number; units: number }[]>`
                 SELECT
                   p.name,
-                  COALESCE(SUM(oi.line_total), 0)::float as revenue,
+                  COALESCE(SUM(oi."lineTotal"), 0)::float as revenue,
                   COALESCE(SUM(oi.quantity), 0)::integer as units
                 FROM products p
-                JOIN order_items oi ON oi.product_id = p.id
-                JOIN orders o ON o.id = oi.order_id
-                WHERE o.payment_status = 'PAID'
+                JOIN order_items oi ON oi."productId" = p.id
+                JOIN orders o ON o.id = oi."orderId"
+                WHERE o."paymentStatus" = 'PAID'
                 GROUP BY p.id, p.name
                 ORDER BY revenue DESC
                 LIMIT 5
