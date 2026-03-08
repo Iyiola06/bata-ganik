@@ -247,7 +247,7 @@ export default function StorefrontLayout() {
                 <h2 className="font-serif text-2xl font-bold uppercase tracking-widest">Bata Ganik</h2>
               </div>
               <p className="text-white/60 text-sm leading-relaxed max-w-xs">
-                Redefining African luxury footwear. Handcrafted in Lagos, worn globally.
+                A House of Handmade Luxury Footwear. Built for longevity, not for volume.
               </p>
               <div className="flex gap-4">
                 <a href="#" className="text-white/60 hover:text-primary transition-colors"><FontAwesomeIcon icon={faInstagram} size="lg" /></a>

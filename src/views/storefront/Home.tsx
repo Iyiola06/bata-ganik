@@ -59,8 +59,8 @@ export default function Home() {
             <span className="italic text-white/90">Heritage</span>
           </h1>
           <p className="text-stone-900/80 text-lg md:text-xl max-w-xl font-light leading-relaxed mb-12">
-            A journey from the heart of Nigeria to the global stage of luxury footwear.
-            Discover the soul stitched into every sole, where tradition meets modern elegance.
+            Bata Ganik Legacy in every step.<br />
+            A House of Handmade Luxury Footwear, built to endure.
           </p>
           <div className="animate-bounce">
             <span className="material-symbols-outlined text-stone-900 text-3xl">keyboard_arrow_down</span>
@@ -174,13 +174,11 @@ export default function Home() {
           <div className="flex-1">
             <span className="text-xs font-bold tracking-widest uppercase text-primary mb-4 block">Our Heritage</span>
             <h2 className="font-serif text-4xl md:text-5xl mb-6 leading-tight">
-              Crafted in Nigeria. <br />
-              <span className="italic text-primary">Worn by the World.</span>
+              Craftsmanship begins <br />
+              <span className="italic text-primary">where visibility ends.</span>
             </h2>
             <p className="text-white/70 text-lg leading-relaxed mb-8 max-w-xl">
-              Every pair of Bata Ganik shoes tells a story — of the artisans from Kano,
-              of ancient leather-working traditions, of a Nigeria that dresses its ambition
-              in the finest materials on earth.
+              Bata Ganik is being built as a respected luxury footwear house, capable of earning recognition beyond its origins. Associated with integrity, structure, and enduring quality, our shoes are designed to endure, not simply to impress.
             </p>
             <Link to="/our-story" className="inline-flex items-center gap-2 text-primary font-medium hover:gap-4 transition-all">
               Read Our Story
