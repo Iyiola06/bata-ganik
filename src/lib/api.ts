@@ -4,7 +4,14 @@
  * In prod on Vercel: same origin, no proxy needed.
  */
 
-const BASE = '/api'
+const getBase = () => {
+    // In browser, relative is best
+    if (typeof window !== 'undefined') return '/api'
+    // Server-side (e.g. metadata generation) needs full URL
+    return `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api`
+}
+
+const BASE = getBase()
 
 class ApiError extends Error {
     constructor(
@@ -20,21 +27,28 @@ async function request<T>(
     path: string,
     options: RequestInit = {}
 ): Promise<T> {
-    const res = await fetch(`${BASE}${path}`, {
-        headers: { 'Content-Type': 'application/json', ...options.headers },
-        ...options,
-    })
+    const url = `${BASE}${path}`
+    try {
+        const res = await fetch(url, {
+            headers: { 'Content-Type': 'application/json', ...options.headers },
+            ...options,
+        })
 
-    if (!res.ok) {
-        let message = `HTTP ${res.status}`
-        try {
-            const data = await res.json()
-            message = data?.error ?? data?.message ?? message
-        } catch { }
-        throw new ApiError(res.status, message)
+        if (!res.ok) {
+            let message = `HTTP ${res.status}`
+            try {
+                const data = await res.json()
+                message = data?.error ?? data?.message ?? message
+            } catch { }
+            throw new ApiError(res.status, message)
+        }
+
+        return res.json() as Promise<T>
+    } catch (err) {
+        if (err instanceof ApiError) throw err
+        console.error(`[API] Fetch failed for ${url}:`, err)
+        throw new Error(`Connection failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
-
-    return res.json() as Promise<T>
 }
 
 export const api = {

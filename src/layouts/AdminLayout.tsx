@@ -77,14 +77,23 @@ export default function AdminLayout() {
           </nav>
         </div>
         {/* User Profile */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-4">
           <div className="flex items-center gap-3 px-2">
-            <div className="size-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold text-xs">A</div>
+            <div className="size-8 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-500 font-bold text-xs">A</div>
             <div className="flex flex-col">
               <span className="text-sm font-medium text-slate-900 dark:text-white">Admin User</span>
               <span className="text-xs text-slate-500 dark:text-slate-400">View Profile</span>
             </div>
           </div>
+          <a 
+            href="https://sulvatech.com" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="flex items-center justify-between px-3 py-2 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 hover:border-primary/30 transition-all group"
+          >
+            <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-white/30">System by</span>
+            <span className="text-primary font-bold text-[11px]">Sulva Tech</span>
+          </a>
         </div>
       </aside>
 

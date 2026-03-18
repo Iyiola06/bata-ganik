@@ -282,7 +282,18 @@ export default function StorefrontLayout() {
             </div>
           </div>
           <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-white/40">
-            <p>© 2025 Bata Ganik. All rights reserved.</p>
+            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
+              <p>© 2025 Bata Ganik. All rights reserved.</p>
+              <a 
+                href="https://sulvatech.com" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full border border-white/10 transition-all group"
+              >
+                <span className="text-[10px] uppercase tracking-widest text-white/30 group-hover:text-white/50 transition-colors">Built by</span>
+                <span className="text-primary font-bold tracking-tight text-[11px]">Sulva Tech</span>
+              </a>
+            </div>
             <div className="flex gap-6">
               <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
               <Link to="/terms-of-service" className="hover:text-white transition-colors">Terms of Service</Link>
