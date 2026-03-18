@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api, formatNGN } from '../../lib/api';
+import { api, formatPrice, convertFromNGN } from '../../lib/api';
 import { useCart } from '../../context/CartContext';
 
 type Step = 'details' | 'payment';
@@ -344,7 +344,7 @@ export default function Checkout() {
                     {isSubmitting ? (
                       <span className="animate-spin material-symbols-outlined">progress_activity</span>
                     ) : (
-                      <><span className="material-symbols-outlined text-sm">credit_card</span> Pay with Stripe</>
+                    <><span className="material-symbols-outlined text-sm">credit_card</span> Pay {formatPrice(convertFromNGN(total, currency), currency)} with Stripe</>
                     )}
                   </button>
                 )}
@@ -428,22 +428,22 @@ export default function Checkout() {
               <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400 pb-4 border-b border-neutral-100 dark:border-neutral-700">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span className="font-medium text-slate-900 dark:text-white">{formatNGN(subtotal)}</span>
+                  <span className="font-medium text-slate-900 dark:text-white">{formatPrice(convertFromNGN(subtotal, currency), currency)}</span>
                 </div>
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Discount ({discountData?.code})</span>
-                    <span>−{formatNGN(discountAmount)}</span>
+                    <span>−{formatPrice(convertFromNGN(discountAmount, currency), currency)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span>Shipping</span>
-                  <span className="font-medium text-slate-900 dark:text-white">{formatNGN(SHIPPING_FEE)}</span>
+                  <span className="font-medium text-slate-900 dark:text-white">{formatPrice(convertFromNGN(SHIPPING_FEE, currency), currency)}</span>
                 </div>
               </div>
               <div className="flex justify-between items-center pt-4">
                 <span className="font-bold text-lg text-slate-900 dark:text-white">Total</span>
-                <span className="font-serif font-bold text-xl text-primary">{formatNGN(total)}</span>
+                <span className="font-serif font-bold text-xl text-primary">{formatPrice(convertFromNGN(total, currency), currency)}</span>
               </div>
             </div>
           </div>

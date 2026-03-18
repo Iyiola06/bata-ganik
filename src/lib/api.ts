@@ -153,7 +153,41 @@ export interface Order {
     }>
 }
 
-/** Format a number as Nigerian Naira */
+export const EXCHANGE_RATES: Record<string, number> = {
+    NGN: 1,
+    USD: 1100,
+    GBP: 1400,
+    EUR: 1200,
+};
+
+/**
+ * Convert an amount from NGN to a target currency.
+ */
+export function convertFromNGN(amount: number, currency: string): number {
+    const rate = EXCHANGE_RATES[currency.toUpperCase()] || 1;
+    return Number((amount / rate).toFixed(2));
+}
+
+/**
+ * Format a price with the correct currency symbol and formatting.
+ */
+export function formatPrice(amount: number, currency: string = 'NGN'): string {
+    const c = currency.toUpperCase();
+    if (c === 'NGN') {
+        return `₦${amount.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    }
+    
+    const symbols: Record<string, string> = {
+        USD: '$',
+        GBP: '£',
+        EUR: '€',
+    };
+    
+    const symbol = symbols[c] || c;
+    return `${symbol}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+/** Legacy support for NGN formatting */
 export function formatNGN(amount: number): string {
-    return `₦ ${amount.toLocaleString('en-NG')}`
+    return formatPrice(amount, 'NGN');
 }

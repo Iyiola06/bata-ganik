@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { convertFromNGN } from '@/lib/currency'
 
 const addressSchema = z.object({
     firstName: z.string().min(1),
@@ -63,13 +64,21 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Cart is empty or not found' }, { status: 400 })
         }
 
-        // Calculate totals
-        const subtotal = cart.items.reduce((sum, item) => {
+        // 1. Base NGN total
+        const subtotalNGN = cart.items.reduce((sum, item) => {
             const unitPrice = item.product.price + item.variant.priceModifier
             return sum + unitPrice * item.quantity
         }, 0)
 
-        const total = subtotal + data.shippingFee - data.discountAmount
+        const shippingFeeNGN = data.shippingFee
+        const discountAmountNGN = data.discountAmount
+
+        // 2. Final currency conversion
+        const currency = data.currency
+        const subtotal = convertFromNGN(subtotalNGN, currency)
+        const shippingFee = convertFromNGN(shippingFeeNGN, currency)
+        const discountAmount = convertFromNGN(discountAmountNGN, currency)
+        const total = Number((subtotal + shippingFee - discountAmount).toFixed(2))
 
         // Create order in a transaction
         const order = await prisma.$transaction(async (tx) => {
@@ -83,24 +92,30 @@ export async function POST(request: NextRequest) {
                     guestPhone: data.guestPhone,
                     shippingAddress: data.shippingAddress,
                     subtotal,
-                    shippingFee: data.shippingFee,
-                    discountAmount: data.discountAmount,
+                    shippingFee,
+                    discountAmount,
                     discountCodeId: data.discountCodeId,
                     total,
-                    currency: data.currency,
+                    currency,
                     paymentGateway: data.paymentGateway,
                     notes: data.notes,
                     items: {
-                        create: cart.items.map((item) => ({
-                            productId: item.productId,
-                            variantId: item.variantId,
-                            productName: item.product.name,
-                            size: item.variant.sizeEU,
-                            color: item.variant.color ?? undefined,
-                            quantity: item.quantity,
-                            unitPrice: item.product.price + item.variant.priceModifier,
-                            lineTotal: (item.product.price + item.variant.priceModifier) * item.quantity,
-                        })),
+                        create: cart.items.map((item) => {
+                            const unitPriceNGN = item.product.price + item.variant.priceModifier
+                            const unitPrice = convertFromNGN(unitPriceNGN, currency)
+                            const lineTotal = Number((unitPrice * item.quantity).toFixed(2))
+                            
+                            return {
+                                productId: item.productId,
+                                variantId: item.variantId,
+                                productName: item.product.name,
+                                size: item.variant.sizeEU,
+                                color: item.variant.color ?? undefined,
+                                quantity: item.quantity,
+                                unitPrice,
+                                lineTotal,
+                            }
+                        }),
                     },
                 },
                 include: { items: true },
