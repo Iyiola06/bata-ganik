@@ -1,6 +1,6 @@
 async function test() {
     try {
-        const res = await fetch('http://localhost:3005/api/admin/stats');
+        const res = await fetch('http://localhost:3001/api/cart');
         console.log('Status:', res.status);
         const text = await res.text();
         console.log('Body:', text);
