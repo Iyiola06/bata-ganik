@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { api, type Order, formatNGN } from '../../lib/api';
+import { api, type Order, formatPrice } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
 
 export default function Account() {
@@ -167,7 +167,7 @@ export default function Account() {
                       <div>
                         <div className="flex justify-between items-start mb-2">
                           <span className="text-xs text-stone-500 uppercase tracking-wider">Order #{latestOrder.orderNumber}</span>
-                          <span className="font-serif text-xl text-primary">{formatNGN(latestOrder.total)}</span>
+                          <span className="font-serif text-xl text-primary">{formatPrice(latestOrder.total, latestOrder.currency)}</span>
                         </div>
                         <h3 className="font-serif text-2xl text-stone-900 dark:text-white mb-1">
                           {latestOrder.items[0]?.productName}
@@ -242,7 +242,7 @@ export default function Account() {
                               {order.status}
                             </span>
                           </td>
-                          <td className="px-6 py-4 font-bold">{formatNGN(order.total)}</td>
+                          <td className="px-6 py-4 font-bold">{formatPrice(order.total, order.currency)}</td>
                           <td className="px-6 py-4 text-right">
                             <Link to={`/order-confirmation?orderId=${order.id}`} className="text-primary font-bold hover:underline">Details</Link>
                           </td>

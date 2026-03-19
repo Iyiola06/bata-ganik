@@ -174,16 +174,16 @@ export default function Checkout() {
         currency: currency.toLowerCase(),
       });
 
-      // 2. Initialize Stripe PaymentIntent
-      const payRes = await api.post<{ clientSecret: string }>('/payments/stripe/initialize', {
+      // 2. Initialize Stripe Checkout Session
+      const payRes = await api.post<{ url: string }>('/payments/stripe/initialize', {
         orderId: orderRes.order.id,
         amount: orderRes.order.total,
         currency: currency.toLowerCase(),
       });
 
       await refreshCart();
-      // 3. Redirect to order-confirmation
-      navigate(`/order-confirmation?orderId=${orderRes.order.id}&clientSecret=${payRes.clientSecret}`);
+      // 3. Redirect to Stripe hosted page
+      window.location.href = payRes.url;
     } catch (err: any) {
       setError(err?.message ?? 'Payment initialization failed. Please try again.');
     } finally {
@@ -382,7 +382,7 @@ export default function Checkout() {
                       <div className="flex justify-between">
                         <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{item.product.name}</p>
                         <p className="text-sm font-medium text-slate-900 dark:text-white ml-2 flex-shrink-0">
-                          {formatPrice((item.product.price + item.variant.priceModifier) * item.quantity, 'NGN')}
+                          {formatPrice(convertFromNGN((item.product.price + item.variant.priceModifier) * item.quantity, currency), currency)}
                         </p>
                       </div>
                       {item.variant.color && <p className="text-xs text-slate-500">{item.variant.color}</p>}
@@ -419,7 +419,7 @@ export default function Checkout() {
                     <span className="material-symbols-outlined text-xs">check</span>
                     {discountData.discountType === 'percentage'
                       ? `${discountData.discountValue}% off applied`
-                      : `${formatPrice(discountData.discountValue, 'NGN')} off applied`}
+                      : `${formatPrice(convertFromNGN(discountData.discountValue, currency), currency)} off applied`}
                   </p>
                 )}
               </div>

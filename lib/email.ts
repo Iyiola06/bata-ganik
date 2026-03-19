@@ -10,9 +10,16 @@ const FROM = process.env.EMAIL_FROM ?? 'Bata Ganik <orders@bataganik.com>'
 
 export async function sendOrderConfirmationEmail(
   email: string,
-  order: Order & { items: any[] }
+  order: Order & { items: any[], currency: string }
 ) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
+  const currencySymbols: Record<string, string> = {
+    'NGN': '₦',
+    'USD': '$',
+    'GBP': '£',
+    'EUR': '€'
+  }
+  const symbol = currencySymbols[order.currency] || '₦'
 
   await getResend().emails.send({
     from: FROM,
@@ -35,12 +42,12 @@ export async function sendOrderConfirmationEmail(
             ${order.items.map((item: any) => `
               <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0ede8;">
                 <span style="color: #1a1a1a; font-size: 14px;">${item.productName} — Size ${item.size} × ${item.quantity}</span>
-                <span style="color: #1a1a1a; font-size: 14px; font-weight: bold;">₦${item.lineTotal.toLocaleString()}</span>
+                <span style="color: #1a1a1a; font-size: 14px; font-weight: bold;">${symbol}${item.lineTotal.toLocaleString()}</span>
               </div>
             `).join('')}
             <div style="display: flex; justify-content: space-between; padding-top: 16px; margin-top: 8px;">
               <span style="font-size: 16px; font-weight: bold; color: #1a1a1a;">Total</span>
-              <span style="font-size: 16px; font-weight: bold; color: #c9a96e;">₦${order.total.toLocaleString()}</span>
+              <span style="font-size: 16px; font-weight: bold; color: #c9a96e;">${symbol}${order.total.toLocaleString()}</span>
             </div>
           </div>
           

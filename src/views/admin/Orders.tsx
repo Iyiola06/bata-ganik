@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { api, formatNGN } from '../../lib/api';
+import { api, formatPrice } from '../../lib/api';
 
 interface Order {
   id: string;
@@ -8,6 +8,7 @@ interface Order {
   guestLastName: string | null;
   guestEmail: string | null;
   total: number;
+  currency: string;
   status: string;
   paymentStatus: string;
   paymentGateway: string | null;
@@ -150,7 +151,7 @@ export default function Orders() {
                       {order.itemCount} item{order.itemCount !== 1 ? 's' : ''}
                     </td>
                     <td className="px-4 py-4 text-sm font-medium text-slate-900 dark:text-white">
-                      {formatNGN(order.total)}
+                      {formatPrice(order.total, order.currency)}
                     </td>
                     <td className="px-4 py-4">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${PAYMENT_COLOURS[order.paymentStatus] ?? 'bg-slate-100 text-slate-800'}`}>

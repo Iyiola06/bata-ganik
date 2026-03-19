@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { api, type Order, formatNGN } from '../../lib/api';
+import { api, type Order, formatPrice } from '../../lib/api';
 
 export default function OrderConfirmation() {
   const [searchParams] = useSearchParams();
@@ -94,7 +94,7 @@ export default function OrderConfirmation() {
                         {item.color && <p className="text-sm text-slate-500">Color: {item.color}</p>}
                         <p className="text-sm text-slate-500">Qty: {item.quantity}</p>
                       </div>
-                      <span className="font-bold text-lg text-brand-navy dark:text-white">{formatNGN(item.lineTotal)}</span>
+                      <span className="font-bold text-lg text-brand-navy dark:text-white">{formatPrice(item.lineTotal, order.currency)}</span>
                     </div>
                   </div>
                 </div>
@@ -105,21 +105,21 @@ export default function OrderConfirmation() {
             <div className="mt-8 pt-8 border-t border-neutral-100 dark:border-neutral-700 space-y-2 text-sm">
               <div className="flex justify-between text-slate-600 dark:text-slate-400">
                 <span>Subtotal</span>
-                <span>{formatNGN(order.subtotal)}</span>
+                <span>{formatPrice(order.subtotal, order.currency)}</span>
               </div>
               {order.discountAmount > 0 && (
                 <div className="flex justify-between text-green-600">
                   <span>Discount</span>
-                  <span>−{formatNGN(order.discountAmount)}</span>
+                  <span>−{formatPrice(order.discountAmount, order.currency)}</span>
                 </div>
               )}
               <div className="flex justify-between text-slate-600 dark:text-slate-400">
                 <span>Shipping</span>
-                <span>{formatNGN(order.shippingFee)}</span>
+                <span>{formatPrice(order.shippingFee, order.currency)}</span>
               </div>
               <div className="flex justify-between mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-700">
                 <span className="font-serif font-bold text-xl text-brand-navy dark:text-white">Total</span>
-                <span className="font-serif font-bold text-xl text-primary">{formatNGN(order.total)}</span>
+                <span className="font-serif font-bold text-xl text-primary">{formatPrice(order.total, order.currency)}</span>
               </div>
             </div>
           </div>
