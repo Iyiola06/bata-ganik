@@ -16,6 +16,7 @@ import PrivacyPolicy from './views/storefront/PrivacyPolicy';
 import TermsOfService from './views/storefront/TermsOfService';
 import Catalog from './views/storefront/Catalog';
 import OurStory from './views/storefront/OurStory';
+import TrackOrder from './views/storefront/TrackOrder';
 import AdminLayout from './layouts/AdminLayout';
 import Dashboard from './views/admin/Dashboard';
 import Products from './views/admin/Products';
@@ -62,6 +63,7 @@ export default function App() {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/our-story" element={<OurStory />} />
+        <Route path="/track-order" element={<TrackOrder />} />
         <Route path="/auth/auth-code-error" element={<AuthError />} />
       </Route>
 

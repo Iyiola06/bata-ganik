@@ -136,8 +136,7 @@ export default function Checkout() {
         amount: orderRes.order.total,
       });
 
-      // 3. Clear the cart only after payment is initialized successfully
-      await api.post('/cart/clear', {});
+      // 3. Cart is cleared server-side during order creation
       await refreshCart();
       // 4. Redirect to Paystack hosted page
       window.location.href = payRes.authorizationUrl;
@@ -183,8 +182,7 @@ export default function Checkout() {
         currency: currency.toLowerCase(),
       });
 
-      // 3. Clear the cart only after payment is initialized successfully
-      await api.post('/cart/clear', {});
+      // 3. Cart is cleared server-side during order creation
       await refreshCart();
       // 4. Redirect to Stripe hosted page
       window.location.href = payRes.url;

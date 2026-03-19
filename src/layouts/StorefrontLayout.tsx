@@ -268,6 +268,7 @@ export default function StorefrontLayout() {
                 <li><Link to="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
                 <li><Link to="/shipping-returns" className="hover:text-white transition-colors">Shipping & Returns</Link></li>
                 <li><Link to="/size-guide" className="hover:text-white transition-colors">Size Guide</Link></li>
+                <li><Link to="/track-order" className="hover:text-white transition-colors">Track Your Order</Link></li>
                 <li><Link to="/faq" className="hover:text-white transition-colors">FAQ</Link></li>
                 <li><Link to="/care-instructions" className="hover:text-white transition-colors">Care Instructions</Link></li>
               </ul>

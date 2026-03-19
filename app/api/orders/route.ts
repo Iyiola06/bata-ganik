@@ -137,9 +137,8 @@ export async function POST(request: NextRequest) {
                 })
             }
 
-            // NOTE: Cart is NOT cleared here. It will be cleared after
-            // successful payment confirmation (via webhook) to prevent
-            // data loss if payment initialization fails.
+            // Clear the cart — order items are the permanent record now
+            await tx.cartItem.deleteMany({ where: { cartId: data.cartId } })
 
             return newOrder
         })
