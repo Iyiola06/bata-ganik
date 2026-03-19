@@ -10,4 +10,8 @@ export const prisma =
         log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     })
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+// Cache in ALL environments (including production) to prevent
+// "prepared statement already exists" errors with PgBouncer on
+// Vercel serverless warm starts.
+globalForPrisma.prisma = prisma
+
