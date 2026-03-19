@@ -6,7 +6,13 @@ import {
 import { api, formatNGN } from '../../lib/api';
 
 interface AnalyticsData {
-    kpis: { revenue: number; orders: number; avgOrderValue: number; customers: number };
+    kpis: { 
+        revenue: number; 
+        totalOrderValue: number;
+        orders: number; 
+        avgOrderValue: number; 
+        customers: number 
+    };
     revenueByMonth: { name: string; value: number }[];
     topProducts: { name: string; revenue: number; units: number }[];
     ordersByStatus: { status: string; count: number }[];
@@ -55,7 +61,7 @@ export default function Analytics() {
     }, []);
 
     const kpiCards = data ? [
-        { label: 'Total Revenue', value: formatNGN(data.kpis.revenue) },
+        { label: 'Paid Revenue', value: formatNGN(data.kpis.revenue), sub: `Total order value: ${formatNGN(data.kpis.totalOrderValue)}` },
         { label: 'Total Orders', value: data.kpis.orders.toLocaleString() },
         { label: 'Avg. Order Value', value: formatNGN(data.kpis.avgOrderValue) },
         { label: 'Registered Customers', value: data.kpis.customers.toLocaleString() },
@@ -81,7 +87,7 @@ export default function Analytics() {
                     {loading
                         ? [1, 2, 3, 4].map((i) => <KpiSkeleton key={i} />)
                         : kpiCards.map((card, i) => (
-                            <div key={card.label} className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <div key={card.label} className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
                                 <div className="flex justify-between items-start mb-4">
                                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{card.label}</p>
                                     <div className={`p-3 ${KPI_ICONS[i].bg} rounded-lg ${KPI_ICONS[i].color}`}>
@@ -89,6 +95,7 @@ export default function Analytics() {
                                     </div>
                                 </div>
                                 <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{card.value}</h3>
+                                {card.sub && <p className="text-[10px] text-slate-400 mt-2 font-medium">{card.sub}</p>}
                             </div>
                         ))
                     }

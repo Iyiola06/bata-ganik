@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
                 },
             ],
             mode: 'payment',
+            client_reference_id: orderId,
             metadata: { orderId },
             payment_intent_data: {
                 metadata: { orderId },

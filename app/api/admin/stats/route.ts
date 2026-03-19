@@ -33,41 +33,24 @@ export async function GET() {
             recentOrders,
             revenueByMonth,
         ] = await Promise.all([
-            // Total revenue (paid orders) converted to NGN
+            // Total revenue (paid) converted to NGN
             prisma.$queryRaw<{ total: number }[]>`
                 SELECT COALESCE(SUM(${prisma.raw(SQL_CONVERT_TO_NGN)}), 0)::float as total
                 FROM orders WHERE "paymentStatus" = 'PAID'
             `,
-            // This month revenue
+            // Total Order Value (all orders) converted to NGN
             prisma.$queryRaw<{ total: number }[]>`
                 SELECT COALESCE(SUM(${prisma.raw(SQL_CONVERT_TO_NGN)}), 0)::float as total
-                FROM orders WHERE "paymentStatus" = 'PAID' AND "createdAt" >= ${startOfMonth}
+                FROM orders
             `,
-            // Last month revenue
-            prisma.$queryRaw<{ total: number }[]>`
-                SELECT COALESCE(SUM(${prisma.raw(SQL_CONVERT_TO_NGN)}), 0)::float as total
-                FROM orders 
-                WHERE "paymentStatus" = 'PAID' 
-                  AND "createdAt" >= ${startOfLastMonth} AND "createdAt" < ${startOfMonth}
-            `,
-            
-            // Orders count
+            // Total orders
             prisma.order.count(),
-            prisma.order.count({ where: { createdAt: { gte: startOfMonth } } }),
-            prisma.order.count({
-                where: { createdAt: { gte: startOfLastMonth, lt: startOfMonth } },
-            }),
-            prisma.order.count({ where: { status: 'PENDING' } }),
-            // Products
-            prisma.product.count({ where: { isPublished: true } }),
-            prisma.productVariant.count({ where: { stockQty: { lte: 5 } } }),
-            // Recent orders
-            prisma.order.findMany({
-                take: 10,
-                orderBy: { createdAt: 'desc' },
-                include: {
-                    items: { take: 1, include: { product: true } },
-                },
+            // Total registered customers
+            prisma.customer.count(),
+            // Orders grouped by status
+            prisma.order.groupBy({
+                by: ['status'],
+                _count: { id: true },
             }),
             // Revenue by month (last 6 months) — raw query for chart
             prisma.$queryRaw`
@@ -84,34 +67,33 @@ export async function GET() {
         ])
 
         const totalRevenue = Number(totalRevResult[0]?.total || 0)
-        const currRevenue = Number(thisMonthRevResult[0]?.total || 0)
-        const prevRevenue = Number(lastMonthRevResult[0]?.total || 0)
+        const totalValue = Number(thisMonthRevResult[0]?.total || 0)
 
-        const revenueChange = prevRevenue > 0
-            ? Math.round(((currRevenue - prevRevenue) / prevRevenue) * 100)
-            : 0
-
-        const ordersChange = ordersLastMonth > 0
-            ? Math.round(((ordersThisMonth - ordersLastMonth) / ordersLastMonth) * 100)
-            : 0
+        const pendingCount = await prisma.order.count({ where: { status: 'PENDING' } })
+        const activeProds = await prisma.product.count({ where: { isPublished: true } })
+        const lowStock = await prisma.productVariant.count({ where: { stockQty: { lte: 5 } } })
+        const recent = await prisma.order.findMany({
+            take: 10,
+            orderBy: { createdAt: 'desc' },
+            include: { items: { take: 1, include: { product: true } } }
+        })
 
         return NextResponse.json({
             revenue: {
                 total: totalRevenue,
-                thisMonth: currRevenue,
-                change: revenueChange,
+                totalValue: totalValue,
+                change: 0, // Placeholder
             },
             orders: {
                 total: totalOrders,
-                thisMonth: ordersThisMonth,
-                change: ordersChange,
-                pending: pendingOrders,
+                pending: pendingCount,
+                change: 0,
             },
             products: {
-                total: activeProducts,
-                lowStock: lowStockVariants,
+                total: activeProds,
+                lowStock: lowStock,
             },
-            recentOrders,
+            recentOrders: recent,
             revenueByMonth: (revenueByMonth as any[]).map(r => ({
                 name: r.name,
                 value: Number(r.value)

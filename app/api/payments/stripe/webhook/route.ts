@@ -25,34 +25,44 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-        if (event.type === 'payment_intent.succeeded') {
-            const paymentIntent = event.data.object
-            const orderId = paymentIntent.metadata?.orderId
+        const type = event.type
+        console.log(`[Stripe Webhook] Received event: ${type}`)
 
-            if (!orderId) return NextResponse.json({ received: true })
+        if (type === 'payment_intent.succeeded' || type === 'checkout.session.completed') {
+            const dataObject = event.data.object as any
+            const orderId = dataObject.metadata?.orderId || dataObject.client_reference_id
+
+            if (!orderId) {
+                console.warn('[Stripe Webhook] No orderId found in metadata/client_reference_id')
+                return NextResponse.json({ received: true })
+            }
 
             const order = await prisma.order.findUnique({
                 where: { id: orderId },
                 include: { items: true },
             })
 
-            if (!order || order.paymentStatus === 'PAID') {
+            if (!order) {
+                console.error('[Stripe Webhook] Order not found:', orderId)
                 return NextResponse.json({ received: true })
             }
 
+            if (order.paymentStatus === 'PAID') {
+                console.log('[Stripe Webhook] Order already marked as PAID:', orderId)
+                return NextResponse.json({ received: true })
+            }
+
+            // Mark as paid
             await prisma.$transaction([
                 prisma.transaction.create({
                     data: {
                         orderId,
                         gateway: 'stripe',
-                        reference: paymentIntent.id,
-                        amount: paymentIntent.amount / 100,
-                        currency: paymentIntent.currency.toUpperCase(),
+                        reference: dataObject.id,
+                        amount: (dataObject.amount_total || dataObject.amount || 0) / 100,
+                        currency: (dataObject.currency || 'USD').toUpperCase(),
                         status: 'success',
-                        metadata: {
-                            payment_method: paymentIntent.payment_method,
-                            amount_received: paymentIntent.amount_received,
-                        } as any,
+                        metadata: dataObject,
                     },
                 }),
                 prisma.order.update({
@@ -60,36 +70,21 @@ export async function POST(request: NextRequest) {
                     data: {
                         paymentStatus: 'PAID',
                         status: 'PROCESSING',
-                        paymentRef: paymentIntent.id,
+                        paymentRef: dataObject.id,
                     },
                 }),
             ])
 
-            const email = order.guestEmail ?? ''
+            console.log('[Stripe Webhook] Order updated to PAID successfully:', orderId)
+
+            const email = order.guestEmail || order.customer?.email
             if (email) {
                 try {
+                    const { sendOrderConfirmationEmail } = await import('@/lib/email')
                     await sendOrderConfirmationEmail(email, order as any)
                 } catch (emailErr) {
-                    console.error('[Stripe webhook] Email send failed:', emailErr)
+                    console.error('[Stripe Webhook] Email send failed:', emailErr)
                 }
-            }
-        }
-
-        if (event.type === 'payment_intent.payment_failed') {
-            const paymentIntent = event.data.object
-            const orderId = paymentIntent.metadata?.orderId
-            if (orderId) {
-                await prisma.transaction.create({
-                    data: {
-                        orderId,
-                        gateway: 'stripe',
-                        reference: paymentIntent.id,
-                        amount: paymentIntent.amount / 100,
-                        currency: paymentIntent.currency.toUpperCase(),
-                        status: 'failed',
-                        metadata: { error: paymentIntent.last_payment_error } as any,
-                    },
-                })
             }
         }
 

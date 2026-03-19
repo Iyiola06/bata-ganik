@@ -52,12 +52,13 @@ export default function Dashboard() {
   const statCards = stats
     ? [
       {
-        label: 'Total Revenue',
+        label: 'Paid Revenue',
         value: formatNGN(stats.revenue.total),
         change: stats.revenue.change,
         icon: 'payments',
         color: 'text-primary',
         bg: 'bg-primary/10',
+        sub: `Total value: ${formatNGN((stats.revenue as any).totalValue)}`,
       },
       {
         label: 'Total Orders',
@@ -106,25 +107,14 @@ export default function Dashboard() {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{card.label}</p>
-                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{card.value}</h3>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{card.value}</h3>
                   </div>
                   <div className={`p-3 ${card.bg} rounded-lg ${card.color}`}>
                     <span className="material-symbols-outlined">{card.icon}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm">
-                  {card.change !== undefined && (
-                    <span className={`font-bold flex items-center ${card.change >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                      <span className="material-symbols-outlined text-sm">
-                        {card.change >= 0 ? 'trending_up' : 'trending_down'}
-                      </span>
-                      {Math.abs(card.change)}%
-                    </span>
-                  )}
-                  <span className="text-slate-400">{card.change !== undefined ? 'vs last month' : card.sub}</span>
-                  {card.change !== undefined && card.sub && (
-                    <span className="text-slate-400">· {card.sub}</span>
-                  )}
+                <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                  <span className="font-medium text-slate-600 dark:text-slate-400">{card.sub}</span>
                 </div>
               </div>
             ))}

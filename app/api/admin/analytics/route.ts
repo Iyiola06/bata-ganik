@@ -14,18 +14,15 @@ export async function GET() {
             revenueByMonth,
             topProducts,
         ] = await Promise.all([
-            // Total revenue (paid) converted to NGN
+            // Total revenue (paid) converted to NGN. This only counts paid orders.
             prisma.$queryRaw<{ total: number }[]>`
-                SELECT COALESCE(SUM(
-                    CASE 
-                        WHEN currency = 'USD' THEN total * 1100
-                        WHEN currency = 'GBP' THEN total * 1400
-                        WHEN currency = 'EUR' THEN total * 1200
-                        ELSE total 
-                    END
-                ), 0)::float as total
+                SELECT COALESCE(SUM(${prisma.raw(SQL_CONVERT_ORDER_TOTAL_TO_NGN)}), 0)::float as total
+                FROM orders WHERE "paymentStatus" = 'PAID'
+            `,
+            // Total Order Value (all orders) converted to NGN
+            prisma.$queryRaw<{ total: number }[]>`
+                SELECT COALESCE(SUM(${prisma.raw(SQL_CONVERT_ORDER_TOTAL_TO_NGN)}), 0)::float as total
                 FROM orders
-                WHERE "paymentStatus" = 'PAID'
             `,
             // Total orders
             prisma.order.count(),
@@ -36,22 +33,14 @@ export async function GET() {
                 by: ['status'],
                 _count: { id: true },
             }),
-            // Revenue by month (last 12 months) converted to NGN
-            prisma.$queryRaw<{ month: string; month_num: number; value: number }[]>`
+            // Revenue by month (last 6 months) converted to NGN
+            prisma.$queryRaw<{ month: string; value: number }[]>`
                 SELECT
                   TO_CHAR("createdAt", 'Mon YY') as month,
-                  EXTRACT(EPOCH FROM DATE_TRUNC('month', "createdAt")) as month_num,
-                  COALESCE(SUM(
-                    CASE 
-                        WHEN currency = 'USD' THEN total * 1100
-                        WHEN currency = 'GBP' THEN total * 1400
-                        WHEN currency = 'EUR' THEN total * 1200
-                        ELSE total 
-                    END
-                  ), 0)::float as value
+                  COALESCE(SUM(${prisma.raw(SQL_CONVERT_ORDER_TOTAL_TO_NGN)}), 0)::float as value
                 FROM orders
                 WHERE "paymentStatus" = 'PAID'
-                  AND "createdAt" >= NOW() - INTERVAL '12 months'
+                  AND "createdAt" >= NOW() - INTERVAL '6 months'
                 GROUP BY TO_CHAR("createdAt", 'Mon YY'), DATE_TRUNC('month', "createdAt")
                 ORDER BY DATE_TRUNC('month', "createdAt") ASC
             `,
@@ -59,14 +48,7 @@ export async function GET() {
             prisma.$queryRaw<{ name: string; revenue: number; units: number }[]>`
                 SELECT
                   p.name,
-                  COALESCE(SUM(
-                    CASE 
-                        WHEN o.currency = 'USD' THEN oi."lineTotal" * 1100
-                        WHEN o.currency = 'GBP' THEN oi."lineTotal" * 1400
-                        WHEN o.currency = 'EUR' THEN oi."lineTotal" * 1200
-                        ELSE oi."lineTotal" 
-                    END
-                  ), 0)::float as revenue,
+                  COALESCE(SUM(${prisma.raw(SQL_CONVERT_ORDER_ITEM_TOTAL_TO_NGN)}), 0)::float as revenue,
                   COALESCE(SUM(oi.quantity), 0)::integer as units
                 FROM products p
                 JOIN order_items oi ON oi."productId" = p.id
@@ -78,12 +60,14 @@ export async function GET() {
             `,
         ])
 
-        const totalRev = Number(totalRevenueResult[0]?.total || 0)
-        const avgOrderValue = totalOrders > 0 ? totalRev / totalOrders : 0
+        const totalPaidRevenue = Number(totalRevenueResult[0]?.total || 0)
+        const totalOrderValue = Number(totalOrderValueResult[0]?.total || 0)
+        const avgOrderValue = totalOrders > 0 ? totalOrderValue / totalOrders : 0
 
         return NextResponse.json({
             kpis: {
-                revenue: totalRev,
+                revenue: totalPaidRevenue,
+                totalOrderValue: totalOrderValue,
                 orders: totalOrders,
                 avgOrderValue,
                 customers: totalCustomers,
