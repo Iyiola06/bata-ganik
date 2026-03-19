@@ -137,13 +137,21 @@ export async function POST(request: NextRequest) {
                 })
             }
 
-            // Clear the cart
-            await tx.cartItem.deleteMany({ where: { cartId: cart.id } })
+            // NOTE: Cart is NOT cleared here. It will be cleared after
+            // successful payment confirmation (via webhook) to prevent
+            // data loss if payment initialization fails.
 
             return newOrder
         })
 
-        return NextResponse.json({ order }, { status: 201 })
+        // Clear the cart after order creation (non-critical — order is already saved)
+        try {
+            await prisma.cartItem.deleteMany({ where: { cartId: data.cartId } })
+        } catch (clearErr) {
+            console.error('[POST /api/orders] Failed to clear cart (non-critical):', clearErr)
+        }
+
+        return NextResponse.json({ order, cartId: data.cartId }, { status: 201 })
     } catch (error) {
         console.error('[POST /api/orders]', error)
         if (error instanceof z.ZodError) {
