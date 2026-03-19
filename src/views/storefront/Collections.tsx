@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, type Collection } from '../../lib/api';
+import NewsletterForm from '../../components/NewsletterForm';
 
 export default function Collections() {
   const [collections, setCollections] = useState<Collection[]>([]);
@@ -92,16 +93,7 @@ export default function Collections() {
           <p className="text-slate-600 dark:text-slate-300 mb-10 font-light text-lg">
             Be the first to know when new collections drop. Receive exclusive invitations to private viewings and early access to limited editions.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="Your email address"
-              className="flex-1 bg-transparent border-b border-slate-300 dark:border-slate-700 px-4 py-3 focus:outline-none focus:border-primary transition-colors text-slate-900 dark:text-white placeholder-slate-400"
-            />
-            <button type="button" className="bg-primary hover:bg-primary/90 text-brand-navy font-bold py-3 px-8 uppercase text-xs tracking-widest transition-colors">
-              Subscribe
-            </button>
-          </div>
+          <NewsletterForm />
         </div>
       </section>
     </>

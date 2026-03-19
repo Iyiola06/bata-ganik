@@ -3,6 +3,16 @@ import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic';
 
+// Helper for SQL currency conversion to NGN
+const SQL_CONVERT_TO_NGN = `
+    CASE 
+        WHEN currency = 'USD' THEN total * 1100
+        WHEN currency = 'GBP' THEN total * 1400
+        WHEN currency = 'EUR' THEN total * 1200
+        ELSE total 
+    END
+`
+
 // GET /api/admin/stats — dashboard overview numbers
 export async function GET() {
     try {
@@ -11,9 +21,9 @@ export async function GET() {
         const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
 
         const [
-            totalRevenue,
-            revenueThisMonth,
-            revenueLastMonth,
+            totalRevResult,
+            thisMonthRevResult,
+            lastMonthRevResult,
             totalOrders,
             ordersThisMonth,
             ordersLastMonth,
@@ -23,22 +33,24 @@ export async function GET() {
             recentOrders,
             revenueByMonth,
         ] = await Promise.all([
-            // Total revenue (paid orders)
-            prisma.order.aggregate({
-                where: { paymentStatus: 'PAID' },
-                _sum: { total: true },
-            }),
-            prisma.order.aggregate({
-                where: { paymentStatus: 'PAID', createdAt: { gte: startOfMonth } },
-                _sum: { total: true },
-            }),
-            prisma.order.aggregate({
-                where: {
-                    paymentStatus: 'PAID',
-                    createdAt: { gte: startOfLastMonth, lt: startOfMonth },
-                },
-                _sum: { total: true },
-            }),
+            // Total revenue (paid orders) converted to NGN
+            prisma.$queryRaw<{ total: number }[]>`
+                SELECT COALESCE(SUM(${prisma.raw(SQL_CONVERT_TO_NGN)}), 0)::float as total
+                FROM orders WHERE "paymentStatus" = 'PAID'
+            `,
+            // This month revenue
+            prisma.$queryRaw<{ total: number }[]>`
+                SELECT COALESCE(SUM(${prisma.raw(SQL_CONVERT_TO_NGN)}), 0)::float as total
+                FROM orders WHERE "paymentStatus" = 'PAID' AND "createdAt" >= ${startOfMonth}
+            `,
+            // Last month revenue
+            prisma.$queryRaw<{ total: number }[]>`
+                SELECT COALESCE(SUM(${prisma.raw(SQL_CONVERT_TO_NGN)}), 0)::float as total
+                FROM orders 
+                WHERE "paymentStatus" = 'PAID' 
+                  AND "createdAt" >= ${startOfLastMonth} AND "createdAt" < ${startOfMonth}
+            `,
+            
             // Orders count
             prisma.order.count(),
             prisma.order.count({ where: { createdAt: { gte: startOfMonth } } }),
@@ -59,20 +71,22 @@ export async function GET() {
             }),
             // Revenue by month (last 6 months) — raw query for chart
             prisma.$queryRaw`
-        SELECT
-          TO_CHAR("createdAt", 'Mon') as month,
-          EXTRACT(MONTH FROM "createdAt") as month_num,
-          COALESCE(SUM(total), 0) as value
-        FROM orders
-        WHERE "paymentStatus" = 'PAID'
-          AND "createdAt" >= NOW() - INTERVAL '6 months'
-        GROUP BY TO_CHAR("createdAt", 'Mon'), EXTRACT(MONTH FROM "createdAt")
-        ORDER BY month_num ASC
-      `,
+                SELECT
+                    TO_CHAR("createdAt", 'Mon') as name,
+                    DATE_TRUNC('month', "createdAt") as month_date,
+                    COALESCE(SUM(${prisma.raw(SQL_CONVERT_TO_NGN)}), 0)::float as value
+                FROM orders
+                WHERE "paymentStatus" = 'PAID'
+                  AND "createdAt" >= NOW() - INTERVAL '6 months'
+                GROUP BY TO_CHAR("createdAt", 'Mon'), DATE_TRUNC('month', "createdAt")
+                ORDER BY DATE_TRUNC('month', "createdAt") ASC
+            `,
         ])
 
-        const prevRevenue = revenueLastMonth._sum.total ?? 0
-        const currRevenue = revenueThisMonth._sum.total ?? 0
+        const totalRevenue = Number(totalRevResult[0]?.total || 0)
+        const currRevenue = Number(thisMonthRevResult[0]?.total || 0)
+        const prevRevenue = Number(lastMonthRevResult[0]?.total || 0)
+
         const revenueChange = prevRevenue > 0
             ? Math.round(((currRevenue - prevRevenue) / prevRevenue) * 100)
             : 0
@@ -83,7 +97,7 @@ export async function GET() {
 
         return NextResponse.json({
             revenue: {
-                total: totalRevenue._sum.total ?? 0,
+                total: totalRevenue,
                 thisMonth: currRevenue,
                 change: revenueChange,
             },
@@ -98,7 +112,10 @@ export async function GET() {
                 lowStock: lowStockVariants,
             },
             recentOrders,
-            revenueByMonth,
+            revenueByMonth: (revenueByMonth as any[]).map(r => ({
+                name: r.name,
+                value: Number(r.value)
+            })),
         })
     } catch (error: any) {
         console.error('[GET /api/admin/stats]', error)

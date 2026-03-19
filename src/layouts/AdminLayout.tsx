@@ -50,7 +50,7 @@ export default function AdminLayout() {
               to="/admin/discount-codes"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive('/admin/discount-codes') ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}
             >
-              <span className={`material-symbols-outlined ${isActive('/admin/discount-codes') ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`}>discount</span>
+              <span className={`material-symbols-outlined text-[1.25rem] leading-none ${isActive('/admin/discount-codes') ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`}>sell</span>
               <span className={`text-sm ${isActive('/admin/discount-codes') ? 'font-bold' : 'font-medium'}`}>Discounts</span>
             </Link>
             <Link
@@ -66,6 +66,13 @@ export default function AdminLayout() {
             >
               <span className={`material-symbols-outlined ${isActive('/admin/analytics') ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`}>bar_chart</span>
               <span className={`text-sm ${isActive('/admin/analytics') ? 'font-bold' : 'font-medium'}`}>Analytics</span>
+            </Link>
+            <Link
+              to="/admin/newsletter"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive('/admin/newsletter') ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}
+            >
+              <span className={`material-symbols-outlined ${isActive('/admin/newsletter') ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`}>mail</span>
+              <span className={`text-sm ${isActive('/admin/newsletter') ? 'font-bold' : 'font-medium'}`}>Newsletter</span>
             </Link>
             <Link
               to="/admin/settings"

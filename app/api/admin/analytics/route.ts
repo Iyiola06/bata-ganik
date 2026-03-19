@@ -7,18 +7,26 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
     try {
         const [
-            totalRevenue,
+            totalRevenueResult,
             totalOrders,
             totalCustomers,
             ordersByStatus,
             revenueByMonth,
             topProducts,
         ] = await Promise.all([
-            // Total revenue (paid)
-            prisma.order.aggregate({
-                where: { paymentStatus: 'PAID' },
-                _sum: { total: true },
-            }),
+            // Total revenue (paid) converted to NGN
+            prisma.$queryRaw<{ total: number }[]>`
+                SELECT COALESCE(SUM(
+                    CASE 
+                        WHEN currency = 'USD' THEN total * 1100
+                        WHEN currency = 'GBP' THEN total * 1400
+                        WHEN currency = 'EUR' THEN total * 1200
+                        ELSE total 
+                    END
+                ), 0)::float as total
+                FROM orders
+                WHERE "paymentStatus" = 'PAID'
+            `,
             // Total orders
             prisma.order.count(),
             // Total registered customers
@@ -28,23 +36,37 @@ export async function GET() {
                 by: ['status'],
                 _count: { id: true },
             }),
-            // Revenue by month (last 12 months)
+            // Revenue by month (last 12 months) converted to NGN
             prisma.$queryRaw<{ month: string; month_num: number; value: number }[]>`
                 SELECT
                   TO_CHAR("createdAt", 'Mon YY') as month,
                   EXTRACT(EPOCH FROM DATE_TRUNC('month', "createdAt")) as month_num,
-                  COALESCE(SUM(total), 0)::float as value
+                  COALESCE(SUM(
+                    CASE 
+                        WHEN currency = 'USD' THEN total * 1100
+                        WHEN currency = 'GBP' THEN total * 1400
+                        WHEN currency = 'EUR' THEN total * 1200
+                        ELSE total 
+                    END
+                  ), 0)::float as value
                 FROM orders
                 WHERE "paymentStatus" = 'PAID'
                   AND "createdAt" >= NOW() - INTERVAL '12 months'
                 GROUP BY TO_CHAR("createdAt", 'Mon YY'), DATE_TRUNC('month', "createdAt")
                 ORDER BY DATE_TRUNC('month', "createdAt") ASC
             `,
-            // Top products by revenue
+            // Top products by revenue converted to NGN
             prisma.$queryRaw<{ name: string; revenue: number; units: number }[]>`
                 SELECT
                   p.name,
-                  COALESCE(SUM(oi."lineTotal"), 0)::float as revenue,
+                  COALESCE(SUM(
+                    CASE 
+                        WHEN o.currency = 'USD' THEN oi."lineTotal" * 1100
+                        WHEN o.currency = 'GBP' THEN oi."lineTotal" * 1400
+                        WHEN o.currency = 'EUR' THEN oi."lineTotal" * 1200
+                        ELSE oi."lineTotal" 
+                    END
+                  ), 0)::float as revenue,
                   COALESCE(SUM(oi.quantity), 0)::integer as units
                 FROM products p
                 JOIN order_items oi ON oi."productId" = p.id
@@ -56,7 +78,7 @@ export async function GET() {
             `,
         ])
 
-        const totalRev = totalRevenue._sum.total ?? 0
+        const totalRev = Number(totalRevenueResult[0]?.total || 0)
         const avgOrderValue = totalOrders > 0 ? totalRev / totalOrders : 0
 
         return NextResponse.json({

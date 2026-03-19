@@ -77,7 +77,7 @@ export default function TrackOrder() {
                 required
                 value={orderNumber}
                 onChange={(e) => setOrderNumber(e.target.value)}
-                placeholder="e.g. BG-2026-12345"
+                placeholder={`e.g. BG-${new Date().getFullYear()}-12345`}
                 className="w-full border border-neutral-300 dark:border-neutral-600 rounded-md px-4 py-3 bg-transparent focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               />
             </div>

@@ -138,9 +138,30 @@ export default function Settings() {
                             <p className="text-xs text-slate-500">Super Admin</p>
                         </div>
                     </div>
-                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-sm text-amber-800 dark:text-amber-200 flex gap-3">
-                        <span className="material-symbols-outlined text-amber-500 flex-shrink-0">info</span>
-                        <span>To add more admin users, use the invite link from <strong>Admin → Invite</strong> or run the SQL in <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900 px-1 rounded">setup.sql</code>.</span>
+                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-sm text-amber-800 dark:text-amber-200 flex flex-col gap-3">
+                        <div className="flex gap-3">
+                            <span className="material-symbols-outlined text-amber-500 flex-shrink-0">info</span>
+                            <span>To add more admin users, use the invitation link below or run the SQL in <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900 px-1 rounded">setup.sql</code>.</span>
+                        </div>
+                        {process.env.NEXT_PUBLIC_ADMIN_INVITE_TOKEN || (window as any).env?.NEXT_PUBLIC_ADMIN_INVITE_TOKEN ? (
+                            <div className="mt-2 p-3 bg-white dark:bg-slate-950 rounded border border-amber-200 dark:border-amber-900 flex items-center justify-between gap-4">
+                                <code className="text-xs break-all text-slate-600 dark:text-slate-400">
+                                    {window.location.origin}/admin/invite/{process.env.NEXT_PUBLIC_ADMIN_INVITE_TOKEN || (window as any).env?.NEXT_PUBLIC_ADMIN_INVITE_TOKEN}
+                                </code>
+                                <button 
+                                    onClick={() => {
+                                        const url = `${window.location.origin}/admin/invite/${process.env.NEXT_PUBLIC_ADMIN_INVITE_TOKEN || (window as any).env?.NEXT_PUBLIC_ADMIN_INVITE_TOKEN}`;
+                                        navigator.clipboard.writeText(url);
+                                    }}
+                                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-amber-600 transition-colors"
+                                    title="Copy link"
+                                >
+                                    <span className="material-symbols-outlined text-sm">content_copy</span>
+                                </button>
+                            </div>
+                        ) : (
+                            <p className="text-xs text-amber-600 italic mt-1">Invitation token not configured in environment variables.</p>
+                        )}
                     </div>
                 </Section>
             </div>

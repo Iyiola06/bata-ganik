@@ -387,7 +387,7 @@ export default function AddProduct() {
                     type="text"
                     value={sku}
                     onChange={(e) => setSku(e.target.value)}
-                    placeholder="BG-2025-001"
+                    placeholder={`BG-${new Date().getFullYear()}-001`}
                     className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm p-2.5 focus:ring-primary focus:border-primary"
                   />
                 </div>

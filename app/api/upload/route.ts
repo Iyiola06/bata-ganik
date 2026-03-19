@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/prisma'
 
 // POST /api/upload — upload a file to Supabase Storage (admin only)
 export async function POST(request: NextRequest) {
@@ -8,7 +9,24 @@ export async function POST(request: NextRequest) {
     const supabase = await createSupabaseServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user || !['admin', 'super_admin'].includes(user.app_metadata?.role)) {
+    if (!user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check app_metadata first
+    let role = user.app_metadata?.role
+
+    // Fallback: Check the database if metadata is missing or stale
+    if (!role || !['admin', 'super_admin'].includes(role)) {
+        const adminEntry = await prisma.adminUser.findUnique({
+            where: { id: user.id }
+        })
+        if (adminEntry) {
+            role = adminEntry.role
+        }
+    }
+
+    if (!role || !['admin', 'super_admin'].includes(role)) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

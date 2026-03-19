@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faInstagram, faTwitter, faFacebookF } from '@fortawesome/free-brands-svg-icons';
 import { useCart } from '../context/CartContext';
 import { formatNGN } from '../lib/api';
+import NewsletterForm from '../components/NewsletterForm';
 
 export default function StorefrontLayout() {
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -276,15 +277,12 @@ export default function StorefrontLayout() {
             <div>
               <h3 className="text-primary font-bold uppercase text-xs tracking-widest mb-6">Stay in the loop</h3>
               <p className="text-white/60 text-sm mb-4">Subscribe for exclusive access to new drops and private sales.</p>
-              <form className="flex flex-col gap-3">
-                <input type="email" placeholder="Your email address" className="w-full bg-white/5 border border-white/10 rounded-md px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-primary" />
-                <button type="button" className="bg-primary text-brand-navy font-bold py-3 px-4 rounded-md hover:bg-white transition-colors uppercase text-xs tracking-wider">Subscribe</button>
-              </form>
+              <NewsletterForm variant="footer" />
             </div>
           </div>
           <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-white/40">
             <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
-              <p>© 2025 Bata Ganik. All rights reserved.</p>
+              <p>© {new Date().getFullYear()} Bata Ganik. All rights reserved.</p>
               <a 
                 href="https://sulvatech.com" 
                 target="_blank" 
