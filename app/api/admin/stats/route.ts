@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export const dynamic = 'force-dynamic';
 
@@ -33,14 +34,14 @@ export async function GET() {
             recentOrders,
             revenueByMonth,
         ] = await Promise.all([
-            // Total revenue (paid) converted to NGN
+            // Total revenue (paidorders) converted to NGN
             prisma.$queryRaw<{ total: number }[]>`
-                SELECT COALESCE(SUM(${prisma.raw(SQL_CONVERT_TO_NGN)}), 0)::float as total
+                SELECT COALESCE(SUM(${Prisma.raw(SQL_CONVERT_TO_NGN)}), 0)::float as total
                 FROM orders WHERE "paymentStatus" = 'PAID'
             `,
             // Total Order Value (all orders) converted to NGN
             prisma.$queryRaw<{ total: number }[]>`
-                SELECT COALESCE(SUM(${prisma.raw(SQL_CONVERT_TO_NGN)}), 0)::float as total
+                SELECT COALESCE(SUM(${Prisma.raw(SQL_CONVERT_TO_NGN)}), 0)::float as total
                 FROM orders
             `,
             // Total orders
@@ -57,7 +58,7 @@ export async function GET() {
                 SELECT
                     TO_CHAR("createdAt", 'Mon') as name,
                     DATE_TRUNC('month', "createdAt") as month_date,
-                    COALESCE(SUM(${prisma.raw(SQL_CONVERT_TO_NGN)}), 0)::float as value
+                    COALESCE(SUM(${Prisma.raw(SQL_CONVERT_TO_NGN)}), 0)::float as value
                 FROM orders
                 WHERE "paymentStatus" = 'PAID'
                   AND "createdAt" >= NOW() - INTERVAL '6 months'
