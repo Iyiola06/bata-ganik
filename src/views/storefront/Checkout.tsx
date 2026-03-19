@@ -136,8 +136,10 @@ export default function Checkout() {
         amount: orderRes.order.total,
       });
 
+      // 3. Clear the cart only after payment is initialized successfully
+      await api.post('/cart/clear', {});
       await refreshCart();
-      // 3. Redirect to Paystack hosted page
+      // 4. Redirect to Paystack hosted page
       window.location.href = payRes.authorizationUrl;
     } catch (err: any) {
       setError(err?.message ?? 'Payment initialization failed. Please try again.');
@@ -181,8 +183,10 @@ export default function Checkout() {
         currency: currency.toLowerCase(),
       });
 
+      // 3. Clear the cart only after payment is initialized successfully
+      await api.post('/cart/clear', {});
       await refreshCart();
-      // 3. Redirect to Stripe hosted page
+      // 4. Redirect to Stripe hosted page
       window.location.href = payRes.url;
     } catch (err: any) {
       setError(err?.message ?? 'Payment initialization failed. Please try again.');

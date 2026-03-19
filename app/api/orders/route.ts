@@ -144,13 +144,6 @@ export async function POST(request: NextRequest) {
             return newOrder
         })
 
-        // Clear the cart after order creation (non-critical — order is already saved)
-        try {
-            await prisma.cartItem.deleteMany({ where: { cartId: data.cartId } })
-        } catch (clearErr) {
-            console.error('[POST /api/orders] Failed to clear cart (non-critical):', clearErr)
-        }
-
         return NextResponse.json({ order, cartId: data.cartId }, { status: 201 })
     } catch (error) {
         console.error('[POST /api/orders]', error)
