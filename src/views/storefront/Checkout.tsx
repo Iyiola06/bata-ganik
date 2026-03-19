@@ -332,7 +332,7 @@ export default function Checkout() {
                     {isSubmitting ? (
                       <span className="animate-spin material-symbols-outlined">progress_activity</span>
                     ) : (
-                      <><span className="material-symbols-outlined text-sm">payments</span> Pay {formatNGN(total)} with Paystack</>
+                      <><span className="material-symbols-outlined text-sm">payments</span> Pay {formatPrice(total, 'NGN')} with Paystack</>
                     )}
                   </button>
                 ) : (
@@ -382,7 +382,7 @@ export default function Checkout() {
                       <div className="flex justify-between">
                         <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{item.product.name}</p>
                         <p className="text-sm font-medium text-slate-900 dark:text-white ml-2 flex-shrink-0">
-                          {formatNGN((item.product.price + item.variant.priceModifier) * item.quantity)}
+                          {formatPrice((item.product.price + item.variant.priceModifier) * item.quantity, 'NGN')}
                         </p>
                       </div>
                       {item.variant.color && <p className="text-xs text-slate-500">{item.variant.color}</p>}
@@ -419,7 +419,7 @@ export default function Checkout() {
                     <span className="material-symbols-outlined text-xs">check</span>
                     {discountData.discountType === 'percentage'
                       ? `${discountData.discountValue}% off applied`
-                      : `${formatNGN(discountData.discountValue)} off applied`}
+                      : `${formatPrice(discountData.discountValue, 'NGN')} off applied`}
                   </p>
                 )}
               </div>

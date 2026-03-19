@@ -67,13 +67,8 @@ export async function GET(request: NextRequest) {
                 pages: Math.ceil(total / query.limit),
             },
         })
-    } catch (error: any) {
+    } catch (error) {
         console.error('[GET /api/products]', error)
-        return NextResponse.json({
-            error: 'Failed to fetch products',
-            message: error?.message || 'Unknown',
-            code: error?.code || null,
-            meta: error?.meta || null,
-        }, { status: 500 })
+        return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 })
     }
 }
