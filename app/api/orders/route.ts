@@ -26,7 +26,7 @@ const createOrderSchema = z.object({
     // Cart
     cartId: z.string(),
     // Pricing
-    currency: z.enum(['NGN', 'USD', 'GBP', 'EUR']).default('NGN'),
+    currency: z.string().transform(s => s.toUpperCase()).pipe(z.enum(['NGN', 'USD', 'GBP', 'EUR'])).default('NGN'),
     shippingFee: z.number().default(5000),
     discountCodeId: z.string().optional(),
     discountAmount: z.number().default(0),
