@@ -64,21 +64,26 @@ async function getOrCreateCart(sessionId?: string, customerId?: string) {
 
 // GET /api/cart — fetch the cart
 export async function GET(request: NextRequest) {
-    const cookieStore = await cookies()
-    const sessionId = cookieStore.get('cart_session')?.value
+    try {
+        const cookieStore = await cookies()
+        const sessionId = cookieStore.get('cart_session')?.value
 
-    const cart = await getOrCreateCart(sessionId)
+        const cart = await getOrCreateCart(sessionId)
 
-    const response = NextResponse.json({ cart })
-    if (!sessionId) {
-        response.cookies.set('cart_session', cart.sessionId!, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 60 * 60 * 24 * 30, // 30 days
-        })
+        const response = NextResponse.json({ cart })
+        if (!sessionId) {
+            response.cookies.set('cart_session', cart.sessionId!, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 60 * 60 * 24 * 30, // 30 days
+            })
+        }
+        return response
+    } catch (error) {
+        console.error('[GET /api/cart]', error)
+        return NextResponse.json({ error: 'Failed to fetch cart' }, { status: 500 })
     }
-    return response
 }
 
 const addItemSchema = z.object({

@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     serverActions: {
-      allowedOrigins: ['bata-ganik.vercel.app', 'localhost:3000'],
+      allowedOrigins: ['bata.sulvatech.com', 'bata-ganik.vercel.app', 'localhost:3000', 'bataganik.com'],
     },
   },
   // The src/ directory contains Vite SPA components (React Router pages),
