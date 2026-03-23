@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 
 export default function AdminLogin() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const reason = new URLSearchParams(location.search).get('reason');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -49,6 +51,18 @@ export default function AdminLogin() {
 
                 {/* Login Form */}
                 <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+                    {reason === 'session-expired' && !error && (
+                        <div className="mb-6 p-3 bg-amber-900/30 border border-amber-800/50 rounded-lg text-amber-300 text-sm flex items-center gap-2">
+                            <span className="material-symbols-outlined text-sm">info</span>
+                            Your session expired. Please sign in again.
+                        </div>
+                    )}
+                    {reason === 'forbidden' && !error && (
+                        <div className="mb-6 p-3 bg-red-900/30 border border-red-800/50 rounded-lg text-red-400 text-sm flex items-center gap-2">
+                            <span className="material-symbols-outlined text-sm">block</span>
+                            You do not have permission to access admin APIs.
+                        </div>
+                    )}
                     {error && (
                         <div className="mb-6 p-3 bg-red-900/30 border border-red-800/50 rounded-lg text-red-400 text-sm flex items-center gap-2">
                             <span className="material-symbols-outlined text-sm">error</span>

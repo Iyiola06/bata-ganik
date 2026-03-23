@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { api } from '../../lib/api';
+import { api, ApiError } from '../../lib/api';
 
 export default function AdminSignup() {
     const navigate = useNavigate();
@@ -60,7 +60,16 @@ export default function AdminSignup() {
             // 3. Redirect to admin dashboard
             navigate('/admin', { replace: true });
         } catch (err: any) {
-            setError(err.message || 'Signup failed');
+            if (err instanceof ApiError) {
+                if (err.code === 'INVITE_USED') setError('This invitation link has already been used.');
+                else if (err.code === 'INVITE_EXPIRED') setError('This invitation link has expired. Ask a super admin for a new invite.');
+                else if (err.code === 'INVITE_REVOKED') setError('This invitation link has been revoked.');
+                else if (err.code === 'INVITE_EMAIL_MISMATCH') setError('This invite is for a different email address.');
+                else if (err.code === 'INVITE_INVALID') setError('This invitation link is invalid.');
+                else setError(err.message || 'Signup failed');
+            } else {
+                setError(err?.message || 'Signup failed');
+            }
         } finally {
             setLoading(false);
         }

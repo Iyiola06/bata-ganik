@@ -16,7 +16,9 @@ const BASE = getBase()
 class ApiError extends Error {
     constructor(
         public status: number,
-        message: string
+        message: string,
+        public code?: string,
+        public details?: unknown
     ) {
         super(message)
         this.name = 'ApiError'
@@ -36,11 +38,26 @@ async function request<T>(
 
         if (!res.ok) {
             let message = `HTTP ${res.status}`
+            let code: string | undefined
+            let details: unknown
             try {
                 const data = await res.json()
                 message = data?.error ?? data?.message ?? message
+                code = data?.code
+                details = data?.details
             } catch { }
-            throw new ApiError(res.status, message)
+
+            if (
+                typeof window !== 'undefined' &&
+                path.startsWith('/admin') &&
+                !path.startsWith('/admin/invite/signup') &&
+                (res.status === 401 || res.status === 403)
+            ) {
+                const reason = res.status === 401 ? 'session-expired' : 'forbidden'
+                window.location.href = `/admin/login?reason=${reason}`
+            }
+
+            throw new ApiError(res.status, message, code, details)
         }
 
         return res.json() as Promise<T>

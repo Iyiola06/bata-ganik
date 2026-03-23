@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { requireAdmin } from '@/lib/admin-auth'
+import { apiError } from '@/lib/http'
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +25,9 @@ const SQL_CONVERT_ORDER_ITEM_TOTAL_TO_NGN = `
 
 // GET /api/admin/analytics — full analytics data for the analytics page
 export async function GET() {
+    const auth = await requireAdmin()
+    if ('response' in auth) return auth.response
+
     try {
         const [
             totalRevenueResult,
@@ -107,6 +112,6 @@ export async function GET() {
         })
     } catch (error) {
         console.error('[GET /api/admin/analytics]', error)
-        return NextResponse.json({ error: 'Failed to fetch analytics' }, { status: 500 })
+        return apiError(500, 'Failed to fetch analytics', 'INTERNAL_ERROR')
     }
 }

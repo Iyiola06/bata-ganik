@@ -283,6 +283,23 @@ model AdminUser {
   @@map("admin_users")
 }
 
+model AdminInvite {
+  id        String    @id @default(cuid())
+  email     String
+  role      String    @default("admin")
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  revokedAt DateTime?
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([email])
+  @@index([expiresAt])
+  @@map("admin_invites")
+}
+
 model ContactMessage {
   id        String   @id @default(cuid())
   name      String

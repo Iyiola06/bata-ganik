@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
+import { createHash } from 'crypto'
+import { prisma } from '@/lib/prisma'
+import { apiError } from '@/lib/http'
 
 // Admin client using the service role key — can create users + set app_metadata
 function getAdminClient() {
@@ -19,41 +22,68 @@ const signupSchema = z.object({
     token: z.string().min(1),
 })
 
+function hashToken(token: string) {
+    return createHash('sha256').update(token).digest('hex')
+}
+
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
         const { email, password, firstName, lastName, token } = signupSchema.parse(body)
 
-        // Verify invite token
-        const validToken = process.env.NEXT_PUBLIC_ADMIN_INVITE_TOKEN
-        if (!validToken || token !== validToken) {
-            return NextResponse.json({ error: 'Invalid invitation token' }, { status: 403 })
+        const normalizedEmail = email.trim().toLowerCase()
+        const invite = await prisma.adminInvite.findUnique({
+            where: { tokenHash: hashToken(token) },
+        })
+        if (!invite) {
+            return apiError(403, 'Invalid invitation token', 'INVITE_INVALID')
+        }
+        if (invite.usedAt) {
+            return apiError(409, 'Invitation link has already been used', 'INVITE_USED')
+        }
+        if (invite.revokedAt) {
+            return apiError(403, 'Invitation link has been revoked', 'INVITE_REVOKED')
+        }
+        if (invite.expiresAt.getTime() <= Date.now()) {
+            return apiError(410, 'Invitation link has expired', 'INVITE_EXPIRED')
+        }
+        if (invite.email.trim().toLowerCase() !== normalizedEmail) {
+            return apiError(403, 'Invitation email does not match', 'INVITE_EMAIL_MISMATCH')
+        }
+        if (invite.role !== 'admin' && invite.role !== 'super_admin') {
+            return apiError(500, 'Invalid invite role configuration', 'INVITE_ROLE_INVALID')
+        }
+
+        const reserved = await prisma.adminInvite.updateMany({
+            where: {
+                id: invite.id,
+                usedAt: null,
+                revokedAt: null,
+                expiresAt: { gt: new Date() },
+            },
+            data: { usedAt: new Date() },
+        })
+        if (reserved.count === 0) {
+            return apiError(409, 'Invitation link is no longer valid', 'INVITE_ALREADY_CONSUMED')
         }
 
         const supabase = getAdminClient()
 
-        // Check if any admin already exists
-        const { data: allUsers } = await supabase.auth.admin.listUsers({ perPage: 1000 })
-        const existingAdmins = (allUsers?.users ?? []).filter(
-            (u) => u.app_metadata?.role === 'admin' || u.app_metadata?.role === 'super_admin'
-        )
-
-        // First admin gets auto-promoted, subsequent need manual approval
-        const isFirstAdmin = existingAdmins.length === 0
-        const role = isFirstAdmin ? 'super_admin' : undefined
-
-        // Create user with email_confirm: true (no confirmation email needed)
         const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
-            email,
+            email: normalizedEmail,
             password,
             email_confirm: true,
             user_metadata: { first_name: firstName, last_name: lastName },
-            ...(role ? { app_metadata: { role } } : {}),
+            app_metadata: { role: invite.role },
         })
 
         if (createError) {
+            await prisma.adminInvite.update({
+                where: { id: invite.id },
+                data: { usedAt: null },
+            })
             console.error('[Admin Invite Signup]', createError)
-            return NextResponse.json({ error: createError.message }, { status: 400 })
+            return apiError(400, createError.message, 'INVITE_SIGNUP_FAILED')
         }
 
         return NextResponse.json({
@@ -62,16 +92,13 @@ export async function POST(request: NextRequest) {
                 email: newUser.user.email,
                 role: newUser.user.app_metadata?.role ?? null,
             },
-            isFirstAdmin,
-            message: isFirstAdmin
-                ? 'Account created with super_admin privileges. You can now log in.'
-                : 'Account created. An existing admin must grant you access.',
+            message: 'Admin account created. You can now log in.',
         })
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return NextResponse.json({ error: error.flatten().fieldErrors }, { status: 400 })
+            return apiError(400, 'Invalid signup payload', 'BAD_REQUEST', error.flatten().fieldErrors)
         }
         console.error('[POST /api/admin/invite/signup]', error)
-        return NextResponse.json({ error: 'Signup failed' }, { status: 500 })
+        return apiError(500, 'Signup failed', 'INTERNAL_ERROR')
     }
 }

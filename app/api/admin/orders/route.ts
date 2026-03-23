@@ -1,19 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
-import { Resend } from 'resend'
+import { requireAdmin } from '@/lib/admin-auth'
+import { apiError } from '@/lib/http'
 
-function getResend() {
-    return new Resend(process.env.RESEND_API_KEY)
-}
+const querySchema = z.object({
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+    status: z.enum(['ALL', 'PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED']).optional(),
+    search: z.string().default(''),
+})
+
+const patchQuerySchema = z.object({
+    id: z.string().min(1),
+})
 
 // GET /api/admin/orders — paginated orders with filters
 export async function GET(request: NextRequest) {
+    const auth = await requireAdmin()
+    if ('response' in auth) return auth.response
+
     const { searchParams } = new URL(request.url)
-    const page = Number(searchParams.get('page') ?? 1)
-    const limit = Number(searchParams.get('limit') ?? 20)
-    const status = searchParams.get('status')
-    const search = searchParams.get('search') ?? ''
+    const parsed = querySchema.safeParse(Object.fromEntries(searchParams))
+    if (!parsed.success) {
+        return apiError(400, 'Invalid query parameters', 'BAD_REQUEST', parsed.error.flatten())
+    }
+    const { page, limit, status, search } = parsed.data
 
     const where: any = {}
     if (status && status !== 'ALL') where.status = status
@@ -61,10 +73,13 @@ const updateOrderSchema = z.object({
 
 // PATCH /api/admin/orders — update order status
 export async function PATCH(request: NextRequest) {
+    const auth = await requireAdmin()
+    if ('response' in auth) return auth.response
+
     try {
         const { searchParams } = new URL(request.url)
-        const id = searchParams.get('id')
-        if (!id) return NextResponse.json({ error: 'Order ID required' }, { status: 400 })
+        const parsedQuery = patchQuerySchema.parse(Object.fromEntries(searchParams))
+        const { id } = parsedQuery
 
         const body = await request.json()
         const data = updateOrderSchema.parse(body)
@@ -76,7 +91,7 @@ export async function PATCH(request: NextRequest) {
         })
 
         if (!currentOrder) {
-            return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+            return apiError(404, 'Order not found', 'NOT_FOUND')
         }
 
         const oldStatus = currentOrder.status
@@ -110,7 +125,10 @@ export async function PATCH(request: NextRequest) {
 
         return NextResponse.json({ order })
     } catch (error) {
+        if (error instanceof z.ZodError) {
+            return apiError(400, 'Invalid order update payload', 'BAD_REQUEST', error.flatten())
+        }
         console.error('[PATCH /api/admin/orders]', error)
-        return NextResponse.json({ error: 'Failed to update order' }, { status: 500 })
+        return apiError(500, 'Failed to update order', 'INTERNAL_ERROR')
     }
 }

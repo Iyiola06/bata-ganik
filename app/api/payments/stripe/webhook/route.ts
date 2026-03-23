@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
-import { sendOrderConfirmationEmail } from '@/lib/email'
 
 export const maxDuration = 30
 
@@ -39,7 +38,7 @@ export async function POST(request: NextRequest) {
 
             const order = await prisma.order.findUnique({
                 where: { id: orderId },
-                include: { items: true },
+                include: { items: true, customer: true },
             })
 
             if (!order) {

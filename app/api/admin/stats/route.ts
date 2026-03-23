@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { requireAdmin } from '@/lib/admin-auth'
+import { apiError } from '@/lib/http'
 
 export const dynamic = 'force-dynamic';
 
@@ -16,23 +18,19 @@ const SQL_CONVERT_TO_NGN = `
 
 // GET /api/admin/stats — dashboard overview numbers
 export async function GET() {
-    try {
-        const now = new Date()
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const auth = await requireAdmin()
+    if ('response' in auth) return auth.response
 
+    try {
         const [
             totalRevResult,
-            thisMonthRevResult,
-            lastMonthRevResult,
+            totalValueResult,
             totalOrders,
-            ordersThisMonth,
-            ordersLastMonth,
-            pendingOrders,
-            activeProducts,
-            lowStockVariants,
-            recentOrders,
             revenueByMonth,
+            pendingCount,
+            activeProds,
+            lowStock,
+            recent,
         ] = await Promise.all([
             // Total revenue (paidorders) converted to NGN
             prisma.$queryRaw<{ total: number }[]>`
@@ -46,13 +44,6 @@ export async function GET() {
             `,
             // Total orders
             prisma.order.count(),
-            // Total registered customers
-            prisma.customer.count(),
-            // Orders grouped by status
-            prisma.order.groupBy({
-                by: ['status'],
-                _count: { id: true },
-            }),
             // Revenue by month (last 6 months) — raw query for chart
             prisma.$queryRaw`
                 SELECT
@@ -65,19 +56,18 @@ export async function GET() {
                 GROUP BY TO_CHAR("createdAt", 'Mon'), DATE_TRUNC('month', "createdAt")
                 ORDER BY DATE_TRUNC('month', "createdAt") ASC
             `,
+            prisma.order.count({ where: { status: 'PENDING' } }),
+            prisma.product.count({ where: { isPublished: true } }),
+            prisma.productVariant.count({ where: { stockQty: { lte: 5 } } }),
+            prisma.order.findMany({
+                take: 10,
+                orderBy: { createdAt: 'desc' },
+                include: { items: { take: 1, include: { product: true } } }
+            }),
         ])
 
         const totalRevenue = Number(totalRevResult[0]?.total || 0)
-        const totalValue = Number(thisMonthRevResult[0]?.total || 0)
-
-        const pendingCount = await prisma.order.count({ where: { status: 'PENDING' } })
-        const activeProds = await prisma.product.count({ where: { isPublished: true } })
-        const lowStock = await prisma.productVariant.count({ where: { stockQty: { lte: 5 } } })
-        const recent = await prisma.order.findMany({
-            take: 10,
-            orderBy: { createdAt: 'desc' },
-            include: { items: { take: 1, include: { product: true } } }
-        })
+        const totalValue = Number(totalValueResult[0]?.total || 0)
 
         return NextResponse.json({
             revenue: {
@@ -102,6 +92,6 @@ export async function GET() {
         })
     } catch (error: any) {
         console.error('[GET /api/admin/stats]', error)
-        return NextResponse.json({ error: error?.message || 'Failed to fetch stats' }, { status: 500 })
+        return apiError(500, error?.message || 'Failed to fetch stats', 'INTERNAL_ERROR')
     }
 }

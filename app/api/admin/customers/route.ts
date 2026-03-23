@@ -1,12 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { z } from 'zod'
+import { requireAdmin } from '@/lib/admin-auth'
+import { apiError } from '@/lib/http'
+
+const querySchema = z.object({
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+    search: z.string().default(''),
+})
 
 // GET /api/admin/customers — paginated customer list
 export async function GET(request: NextRequest) {
+    const auth = await requireAdmin()
+    if ('response' in auth) return auth.response
+
     const { searchParams } = new URL(request.url)
-    const page = Number(searchParams.get('page') ?? 1)
-    const limit = Number(searchParams.get('limit') ?? 20)
-    const search = searchParams.get('search') ?? ''
+    const parsed = querySchema.safeParse(Object.fromEntries(searchParams))
+    if (!parsed.success) {
+        return apiError(400, 'Invalid query parameters', 'BAD_REQUEST', parsed.error.flatten())
+    }
+    const { page, limit, search } = parsed.data
 
     const where: any = {}
     if (search) {
