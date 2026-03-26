@@ -4,6 +4,8 @@
  * In prod on Vercel: same origin, no proxy needed.
  */
 
+import { supabase } from './supabase'
+
 const getBase = () => {
     // In browser, relative is best
     if (typeof window !== 'undefined') return '/api'
