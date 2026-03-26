@@ -33,9 +33,18 @@ async function request<T>(
 ): Promise<T> {
     const url = `${BASE}${path}`
     try {
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (typeof window !== 'undefined') {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.access_token) {
+                headers['Authorization'] = `Bearer ${session.access_token}`;
+            }
+        }
+
+        const fetchOptions = { ...options };
         const res = await fetch(url, {
-            headers: { 'Content-Type': 'application/json', ...options.headers },
-            ...options,
+            ...fetchOptions,
+            headers: { ...headers, ...(fetchOptions.headers as any) },
         })
 
         if (!res.ok) {
