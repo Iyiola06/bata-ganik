@@ -40,6 +40,13 @@ export default function AdminLayout() {
               <span className={`text-sm ${isActive('/admin/products') ? 'font-bold' : 'font-medium'}`}>Products</span>
             </Link>
             <Link
+              to="/admin/collections"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive('/admin/collections') ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}
+            >
+              <span className={`material-symbols-outlined ${isActive('/admin/collections') ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`}>category</span>
+              <span className={`text-sm ${isActive('/admin/collections') ? 'font-bold' : 'font-medium'}`}>Collections</span>
+            </Link>
+            <Link
               to="/admin/orders"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive('/admin/orders') ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}
             >

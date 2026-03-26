@@ -23,6 +23,28 @@ const patchSchema = z.object({
     continueOnOOS: z.boolean().optional(),
 }).strict()
 
+// GET /api/admin/products/[id] — get a product
+export async function GET(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    const auth = await requireAdmin()
+    if ('response' in auth) return auth.response
+
+    try {
+        const parsedParams = paramsSchema.parse(await params)
+        const { id } = parsedParams
+        const product = await prisma.product.findUnique({
+            where: { id },
+            include: { images: true, variants: true },
+        })
+        if (!product) return apiError(404, 'Product not found', 'NOT_FOUND')
+        return NextResponse.json({ product })
+    } catch (error) {
+        return apiError(500, 'Failed to fetch product', 'INTERNAL_ERROR')
+    }
+}
+
 // PATCH /api/admin/products/[id] — update a product
 export async function PATCH(
     request: NextRequest,

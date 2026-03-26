@@ -120,6 +120,7 @@ export interface Collection {
     id: string
     name: string
     slug: string
+    isActive: boolean
     description: string | null
     imageUrl: string | null
     _count?: { products: number }

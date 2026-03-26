@@ -179,6 +179,13 @@ export default function Products() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
+                        <Link 
+                          to={`/admin/products/${product.id}/edit`}
+                          className="text-slate-400 hover:text-primary transition-colors" 
+                          title="Edit"
+                        >
+                          <span className="material-symbols-outlined text-base">edit</span>
+                        </Link>
                         <button
                           onClick={() => handleDelete(product.id, product.name)}
                           disabled={deleting === product.id}

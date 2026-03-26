@@ -21,6 +21,8 @@ import AdminLayout from './layouts/AdminLayout';
 import Dashboard from './views/admin/Dashboard';
 import Products from './views/admin/Products';
 import AddProduct from './views/admin/AddProduct';
+import EditProduct from './views/admin/EditProduct';
+import AdminCollections from './views/admin/Collections';
 import Orders from './views/admin/Orders';
 import DiscountCodes from './views/admin/DiscountCodes';
 import AdminLogin from './views/admin/AdminLogin';
@@ -75,6 +77,8 @@ export default function App() {
         <Route index element={<Dashboard />} />
         <Route path="products" element={<Products />} />
         <Route path="products/new" element={<AddProduct />} />
+        <Route path="products/:id/edit" element={<EditProduct />} />
+        <Route path="collections" element={<AdminCollections />} />
         <Route path="orders" element={<Orders />} />
         <Route path="discount-codes" element={<DiscountCodes />} />
         <Route path="customers" element={<Customers />} />
