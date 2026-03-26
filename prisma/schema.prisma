@@ -26,6 +26,23 @@ model Collection {
   @@map("collections")
 }
 
+model Category {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?
+  imageUrl    String?
+  isActive    Boolean    @default(true)
+  parentId    String?
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("categories")
+}
+
 model Product {
   id              String           @id @default(cuid())
   name            String
@@ -37,11 +54,15 @@ model Product {
   compareAtPrice  Float?
   collectionId    String?
   collection      Collection?      @relation(fields: [collectionId], references: [id])
+  categoryId      String?
+  category        Category?        @relation(fields: [categoryId], references: [id])
   tags            String[]
   isPublished     Boolean          @default(false)
   isFeatured      Boolean          @default(false)
   trackInventory  Boolean          @default(true)
   continueOnOOS   Boolean          @default(false)
+  collectionSortOrder Int          @default(0)
+  categorySortOrder   Int          @default(0)
   images          ProductImage[]
   variants        ProductVariant[]
   orderItems      OrderItem[]

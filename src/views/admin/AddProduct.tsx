@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api, type Collection } from '../../lib/api';
+import { api, type Collection, type Category } from '../../lib/api';
 
 interface VariantRow {
   key: string;
@@ -23,8 +23,10 @@ export default function AddProduct() {
 
   // Collections
   const [collections, setCollections] = useState<Collection[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   useEffect(() => {
-    api.get<{ collections: Collection[] }>('/collections').then((res) => setCollections(res.collections));
+    api.get<{ collections: Collection[] }>('/collections').then((res) => setCollections(res.collections)).catch(() => {});
+    api.get<{ categories: Category[] }>('/admin/categories').then((res) => setCategories(res.categories)).catch(() => {});
   }, []);
 
   // Form fields
@@ -35,6 +37,7 @@ export default function AddProduct() {
   const [price, setPrice] = useState('');
   const [compareAtPrice, setCompareAtPrice] = useState('');
   const [collectionId, setCollectionId] = useState('');
+  const [categoryId, setCategoryId] = useState('');
   const [tags, setTags] = useState('');
   const [isFeatured, setIsFeatured] = useState(false);
 
@@ -111,6 +114,7 @@ export default function AddProduct() {
         price: Math.round(Number(price) * 100) / 100,
         compareAtPrice: compareAtPrice ? Math.round(Number(compareAtPrice) * 100) / 100 : null,
         collectionId: collectionId || null,
+        categoryId: categoryId || null,
         tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
         isFeatured,
         isPublished: publish,
@@ -281,6 +285,19 @@ export default function AddProduct() {
                   >
                     <option value="">— None —</option>
                     {collections.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Category</label>
+                  <select
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm p-2.5 focus:ring-primary focus:border-primary"
+                  >
+                    <option value="">— None —</option>
+                    {categories.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>

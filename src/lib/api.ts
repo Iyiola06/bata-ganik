@@ -85,6 +85,8 @@ export const api = {
         request<T>(path, { method: 'POST', body: JSON.stringify(body) }),
     patch: <T>(path: string, body: unknown) =>
         request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
+    put: <T>(path: string, body: unknown) =>
+        request<T>(path, { method: 'PUT', body: JSON.stringify(body) }),
     delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
 }
 
@@ -125,6 +127,19 @@ export interface Product {
     isFeatured: boolean
     images: ProductImage[]
     variants: ProductVariant[]
+}
+
+export interface Category {
+    id: string
+    name: string
+    slug: string
+    description: string | null
+    imageUrl: string | null
+    isActive: boolean
+    parentId: string | null
+    parent?: Category | null
+    children?: Category[]
+    _count?: { products: number; children: number }
 }
 
 export interface Collection {

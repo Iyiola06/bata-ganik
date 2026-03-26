@@ -22,6 +22,9 @@ import Dashboard from './views/admin/Dashboard';
 import Products from './views/admin/Products';
 import AddProduct from './views/admin/AddProduct';
 import EditProduct from './views/admin/EditProduct';
+import Categories from './views/admin/Categories';
+import Merchandising from './views/admin/Merchandising';
+import CatalogueExport from './views/admin/CatalogueExport';
 import AdminCollections from './views/admin/Collections';
 import Orders from './views/admin/Orders';
 import DiscountCodes from './views/admin/DiscountCodes';
@@ -78,7 +81,10 @@ export default function App() {
         <Route path="products" element={<Products />} />
         <Route path="products/new" element={<AddProduct />} />
         <Route path="products/:id/edit" element={<EditProduct />} />
+        <Route path="categories" element={<Categories />} />
         <Route path="collections" element={<AdminCollections />} />
+        <Route path="merchandising" element={<Merchandising />} />
+        <Route path="export" element={<CatalogueExport />} />
         <Route path="orders" element={<Orders />} />
         <Route path="discount-codes" element={<DiscountCodes />} />
         <Route path="customers" element={<Customers />} />

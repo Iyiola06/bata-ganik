@@ -11,7 +11,7 @@ export default function AdminLayout() {
   return (
     <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display antialiased min-h-screen flex overflow-hidden">
       {/* Sidebar Navigation */}
-      <aside className="w-64 bg-white dark:bg-[#161513] border-r border-slate-200 dark:border-slate-800 hidden lg:flex flex-col flex-shrink-0 h-screen sticky top-0 z-20">
+      <aside className="w-64 bg-white dark:bg-[#161513] border-r border-slate-200 dark:border-slate-800 hidden lg:flex flex-col flex-shrink-0 h-screen sticky top-0 z-20 print:hidden">
         <div className="p-6 flex flex-col gap-6 flex-1">
           {/* Brand */}
           <div className="flex items-center gap-3">
@@ -40,11 +40,32 @@ export default function AdminLayout() {
               <span className={`text-sm ${isActive('/admin/products') ? 'font-bold' : 'font-medium'}`}>Products</span>
             </Link>
             <Link
+              to="/admin/categories"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive('/admin/categories') ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}
+            >
+              <span className={`material-symbols-outlined ${isActive('/admin/categories') ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`}>account_tree</span>
+              <span className={`text-sm ${isActive('/admin/categories') ? 'font-bold' : 'font-medium'}`}>Categories</span>
+            </Link>
+            <Link
               to="/admin/collections"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive('/admin/collections') ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}
             >
               <span className={`material-symbols-outlined ${isActive('/admin/collections') ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`}>category</span>
               <span className={`text-sm ${isActive('/admin/collections') ? 'font-bold' : 'font-medium'}`}>Collections</span>
+            </Link>
+            <Link
+              to="/admin/merchandising"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive('/admin/merchandising') ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}
+            >
+              <span className={`material-symbols-outlined ${isActive('/admin/merchandising') ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`}>drag_indicator</span>
+              <span className={`text-sm ${isActive('/admin/merchandising') ? 'font-bold' : 'font-medium'}`}>Merchandising</span>
+            </Link>
+            <Link
+              to="/admin/export"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive('/admin/export') ? 'bg-primary/10 text-primary' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}`}
+            >
+              <span className={`material-symbols-outlined ${isActive('/admin/export') ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`}>menu_book</span>
+              <span className={`text-sm ${isActive('/admin/export') ? 'font-bold' : 'font-medium'}`}>Catalogue Print</span>
             </Link>
             <Link
               to="/admin/orders"

@@ -9,6 +9,7 @@ const querySchema = z.object({
     limit: z.coerce.number().int().min(1).max(100).default(20),
     search: z.string().default(''),
     collection: z.string().optional(),
+    category: z.string().optional(),
     stock: z.enum(['low', 'out', 'all']).optional(),
 })
 
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
     if (!parsed.success) {
         return apiError(400, 'Invalid query parameters', 'BAD_REQUEST', parsed.error.flatten())
     }
-    const { page, limit, search, collection, stock: stockStatus } = parsed.data
+    const { page, limit, search, collection, category, stock: stockStatus } = parsed.data
 
     const where: any = {}
     if (search) {
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
         ]
     }
     if (collection) where.collection = { slug: collection }
+    if (category) where.category = { slug: category }
     if (stockStatus === 'low') {
         where.variants = { some: { stockQty: { gt: 0, lte: 10 } } }
     } else if (stockStatus === 'out') {
@@ -43,10 +45,11 @@ export async function GET(request: NextRequest) {
             where,
             skip: (page - 1) * limit,
             take: limit,
-            orderBy: { createdAt: 'desc' },
+            orderBy: collection ? { collectionSortOrder: 'asc' } : category ? { categorySortOrder: 'asc' } : { createdAt: 'desc' },
             include: {
                 images: { where: { isMain: true }, take: 1 },
                 collection: true,
+                category: true,
                 _count: { select: { variants: true } },
                 variants: { select: { stockQty: true } },
             },
@@ -71,6 +74,7 @@ const createProductSchema = z.object({
     price: z.number().positive(),
     compareAtPrice: z.number().positive().optional(),
     collectionId: z.string().optional(),
+    categoryId: z.string().nullable().optional(),
     tags: z.array(z.string()).default([]),
     isPublished: z.boolean().default(false),
     isFeatured: z.boolean().default(false),

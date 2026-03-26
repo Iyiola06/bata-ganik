@@ -16,6 +16,7 @@ const patchSchema = z.object({
     price: z.number().positive().optional(),
     compareAtPrice: z.number().positive().nullable().optional(),
     collectionId: z.string().nullable().optional(),
+    categoryId: z.string().nullable().optional(),
     tags: z.array(z.string()).optional(),
     isPublished: z.boolean().optional(),
     isFeatured: z.boolean().optional(),
