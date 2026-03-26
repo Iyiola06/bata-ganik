@@ -1,6 +1,7 @@
 import { User } from '@supabase/supabase-js'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { apiError } from '@/lib/http'
+import { headers } from 'next/headers'
 
 export type AdminRole = 'admin' | 'super_admin'
 
@@ -25,9 +26,23 @@ function getRole(user: User): AdminRole | null {
 
 export async function requireAdmin(): Promise<AdminAuthResult> {
     const supabase = await createSupabaseServerClient()
-    const { data, error } = await supabase.auth.getUser()
 
-    if (error || !data.user) {
+    const headersList = await headers()
+    const authHeader = headersList.get('authorization')
+    let user = null
+
+    if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.substring(7)
+        const { data, error } = await supabase.auth.getUser(token)
+        if (!error && data.user) user = data.user
+    }
+
+    if (!user) {
+        const { data, error } = await supabase.auth.getUser()
+        if (!error && data.user) user = data.user
+    }
+
+    if (!user) {
         return {
             response: apiError(401, 'Authentication required', 'UNAUTHENTICATED'),
         }
