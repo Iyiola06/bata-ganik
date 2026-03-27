@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
                 collection: true,
                 category: true,
                 _count: { select: { variants: true } },
-                variants: { select: { stockQty: true } },
+                variants: { select: { sizeEU: true, stockQty: true } },
             },
         }),
         prisma.product.count({ where }),
