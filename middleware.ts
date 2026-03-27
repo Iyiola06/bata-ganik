@@ -40,7 +40,20 @@ export const middleware: NextMiddleware = async (request) => {
 
     const {
         data: { user },
-    } = await supabase.auth.getUser()
+    } = await (async () => {
+        if (isAdminApi) {
+            const authHeader = request.headers.get('authorization')
+            if (authHeader?.startsWith('Bearer ')) {
+                const token = authHeader.slice(7)
+                const tokenResult = await supabase.auth.getUser(token)
+                if (tokenResult.data.user) {
+                    return tokenResult
+                }
+            }
+        }
+
+        return supabase.auth.getUser()
+    })()
 
     if (!user) {
         if (isAdminApi) {

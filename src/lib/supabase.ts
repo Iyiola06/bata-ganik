@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
 // Helper to safely get env variables in both Vite and Next.js environments.
 // Static access is required for client-side bundlers to perform replacement.
@@ -18,4 +18,4 @@ if (!supabaseUrl || !supabaseAnonKey) {
     console.warn('Supabase credentials missing in environment variables.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);

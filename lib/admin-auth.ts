@@ -48,14 +48,14 @@ export async function requireAdmin(): Promise<AdminAuthResult> {
         }
     }
 
-    const role = getRole(data.user)
+    const role = getRole(user)
     if (!role) {
         return {
             response: apiError(403, 'Admin access required', 'FORBIDDEN'),
         }
     }
 
-    return { user: data.user, role }
+    return { user, role }
 }
 
 export async function requireSuperAdmin(): Promise<AdminAuthResult> {
