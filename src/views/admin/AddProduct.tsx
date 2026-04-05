@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api, type Collection, type Category } from '../../lib/api';
+import { api, ApiError, type Collection, type Category } from '../../lib/api';
 
 interface VariantRow {
   key: string;
@@ -101,7 +101,16 @@ export default function AddProduct() {
     e.preventDefault();
     if (!name.trim()) { setFormError('Product name is required.'); return; }
     if (!price || Number(price) <= 0) { setFormError('Base price must be greater than 0.'); return; }
-    if (variants.length === 0) { setFormError('Add at least one size variant.'); return; }
+    const normalizedVariants = variants
+      .filter((variant) => variant.sizeEU.trim())
+      .map(({ sizeEU, color, colorHex, priceModifier, stockQty }) => ({
+        sizeEU: sizeEU.trim(),
+        color: color.trim() || null,
+        colorHex: colorHex || null,
+        priceModifier: Number(priceModifier),
+        stockQty: Number(stockQty),
+      }));
+    if (normalizedVariants.length === 0) { setFormError('Add at least one size variant.'); return; }
     if (images.length === 0) { setFormError('Upload at least one product image.'); return; }
     setFormError('');
     setSubmitting(true);
@@ -118,19 +127,19 @@ export default function AddProduct() {
         tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
         isFeatured,
         isPublished: publish,
-        variants: variants.map(({ sizeEU, color, colorHex, priceModifier, stockQty }) => ({
-          sizeEU,
-          color: color || null,
-          colorHex: colorHex || null,
-          priceModifier: Number(priceModifier),
-          stockQty: Number(stockQty),
-        })),
+        variants: normalizedVariants,
         images: images.map(({ url, altText, isMain }, order) => ({ url, altText, isMain, order })),
       };
       const res = await api.post<{ product: { id: string } }>('/admin/products', payload);
       navigate('/admin/products');
     } catch (err: any) {
-      setFormError(err?.message ?? 'Failed to create product. Please try again.');
+      if (err instanceof ApiError && err.details && typeof err.details === 'object') {
+        const fieldErrors = (err.details as any).fieldErrors;
+        const firstError = fieldErrors && Object.values(fieldErrors).flat().find(Boolean);
+        setFormError((typeof firstError === 'string' && firstError) || err.message || 'Failed to create product. Please try again.');
+      } else {
+        setFormError(err?.message ?? 'Failed to create product. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
