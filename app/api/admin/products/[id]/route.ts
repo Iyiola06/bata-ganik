@@ -22,6 +22,19 @@ const patchSchema = z.object({
     isFeatured: z.boolean().optional(),
     trackInventory: z.boolean().optional(),
     continueOnOOS: z.boolean().optional(),
+    images: z.array(z.object({
+        url: z.string().url(),
+        altText: z.string().nullable().optional(),
+        isMain: z.boolean().default(false),
+        order: z.number().default(0),
+    })).optional(),
+    variants: z.array(z.object({
+        sizeEU: z.string().min(1),
+        color: z.string().nullable().optional(),
+        colorHex: z.string().nullable().optional(),
+        stockQty: z.number().int().min(0).default(0),
+        priceModifier: z.number().default(0),
+    })).optional(),
 }).strict()
 
 // GET /api/admin/products/[id] — get a product
@@ -60,9 +73,29 @@ export async function PATCH(
         const body = await request.json()
         const data = patchSchema.parse(body)
 
+        const { images, variants, ...productFields } = data
+
         const product = await prisma.product.update({
             where: { id },
-            data,
+            data: {
+                ...productFields,
+                ...(images
+                    ? {
+                        images: {
+                            deleteMany: {},
+                            create: images,
+                        },
+                    }
+                    : {}),
+                ...(variants
+                    ? {
+                        variants: {
+                            deleteMany: {},
+                            create: variants,
+                        },
+                    }
+                    : {}),
+            },
             include: { images: true, variants: true },
         })
 
