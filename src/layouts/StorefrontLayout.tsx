@@ -30,9 +30,11 @@ export default function StorefrontLayout() {
           </nav>
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <div className="text-primary">
-              <span className="material-symbols-outlined text-3xl">diamond</span>
-            </div>
+            <img
+              src="/ganik-leathers-logo.jpg"
+              alt="Bata Ganik by Ganik Leathers"
+              className="h-12 w-12 rounded-full object-cover ring-1 ring-primary/50 group-hover:ring-primary transition"
+            />
             <h1 className="font-serif text-2xl font-bold text-white tracking-widest uppercase">Bata Ganik</h1>
           </Link>
           {/* Right Nav */}
@@ -244,7 +246,11 @@ export default function StorefrontLayout() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
             <div className="flex flex-col gap-6">
               <div className="flex items-center gap-2">
-                <div className="text-primary"><span className="material-symbols-outlined text-3xl">diamond</span></div>
+                <img
+                  src="/ganik-leathers-logo.jpg"
+                  alt="Bata Ganik by Ganik Leathers"
+                  className="h-12 w-12 rounded-full object-cover ring-1 ring-primary/50"
+                />
                 <h2 className="font-serif text-2xl font-bold uppercase tracking-widest">Bata Ganik</h2>
               </div>
               <p className="text-white/60 text-sm leading-relaxed max-w-xs">

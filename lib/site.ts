@@ -1,4 +1,10 @@
+// Keep the product brand and Google-facing site name explicit.  They are
+// intentionally separate while the site transitions from Bata Ganik to
+// Ganik Leathers in search results.
 export const SITE_NAME = 'Bata Ganik'
+export const SEARCH_SITE_NAME = 'Ganik Leathers'
+export const BRAND_ALIASES = ['Bata Ganik', 'Ganik', 'Ganik Leathers']
+export const BRAND_LOGO = '/ganik-leathers-logo.jpg'
 export const DEFAULT_OG_IMAGE = '/og-image.svg'
 
 function normalizeBase(base: string) {

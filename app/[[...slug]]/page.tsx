@@ -2,7 +2,7 @@ import React from 'react'
 import { Metadata } from 'next'
 import ClientApp from './ClientApp'
 import { prisma } from '@/lib/prisma'
-import { DEFAULT_OG_IMAGE, SITE_NAME, absoluteUrl } from '@/lib/site'
+import { DEFAULT_OG_IMAGE, SEARCH_SITE_NAME, SITE_NAME, absoluteUrl } from '@/lib/site'
 
 interface PageProps {
     params: Promise<{ slug?: string[] }>
@@ -19,7 +19,7 @@ const noIndexRoutes = new Set([
 const staticRouteMeta: Record<string, { title: string; description: string }> = {
     '': {
         title: 'Luxury Footwear',
-        description: 'Handcrafted luxury footwear from Nigeria to the world. Experience premium quality and heritage in every step.',
+        description: 'Ganik Leathers, home of Bata Ganik: handcrafted luxury footwear from Nigeria to the world. Experience premium quality and heritage in every step.',
     },
     collections: {
         title: 'Collections',
@@ -182,7 +182,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // Unknown SPA paths should not compete with primary indexed routes.
     return {
         title: 'Luxury Footwear',
-        description: 'Handcrafted luxury footwear from Nigeria to the world.',
+        description: 'Ganik Leathers, home of Bata Ganik: handcrafted luxury footwear from Nigeria to the world.',
         alternates: { canonical: canonicalPath },
         robots: { index: false, follow: false },
     }
@@ -278,6 +278,7 @@ export default async function Page({ params }: PageProps) {
                     brand: {
                         '@type': 'Brand',
                         name: SITE_NAME,
+                        alternateName: SEARCH_SITE_NAME,
                     },
                     offers: {
                         '@type': 'Offer',
